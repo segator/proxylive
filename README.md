@@ -54,3 +54,7 @@ buffers:
     broadcastBufferSize: 52428800
 ```
 
+## Run in docker
+```bash
+docker run -d -v /my/application.yml:/app/application.yml segator/proxylive
+```
