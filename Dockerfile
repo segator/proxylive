@@ -1,4 +1,4 @@
-FROM jrottenberg/ffmpeg:3.2
+FROM jrottenberg/ffmpeg:3.2-centos
 MAINTAINER Isaac Aymerich <isaac.aymerich@gmail.com>
 
 ADD proxyLive.jar /app/proxyLive.jar
