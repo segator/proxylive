@@ -17,4 +17,6 @@ RUN curl -LO "http://download.oracle.com/otn-pub/java/jdk/$JDK_VERSION-$JDK_BUIL
 ENV JAVA_HOME /usr/java/default
 EXPOSE 8080
 
+WORKDIR /app
+
 ENTRYPOINT ["java", "-jar", "/app/proxyLive.jar"]

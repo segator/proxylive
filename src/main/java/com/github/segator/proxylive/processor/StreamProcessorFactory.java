@@ -24,7 +24,7 @@
 package com.github.segator.proxylive.processor;
 
 import com.github.segator.proxylive.ProxyLiveConstants;
-import com.sun.org.apache.xerces.internal.impl.dv.util.Base64;
+import java.util.Base64;
 import java.util.Date;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
@@ -46,7 +46,7 @@ public class StreamProcessorFactory {
     @Scope(value = "prototype")
     public IStreamProcessor StreamProcessor(int mode, String clientIdentifier, String channel, String profile) {
         String identifier = new Date().getTime() + clientIdentifier;
-        String identifier64 = Base64.encode(identifier.getBytes());
+        String identifier64 = new String(Base64.getEncoder().encode(identifier.getBytes()));
 
         HttpSoureStreamProcessor sourceStreamProcessor = (HttpSoureStreamProcessor) context.getBean("HttpSoureStreamProcessor", identifier64, channel);
 
