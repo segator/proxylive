@@ -19,6 +19,10 @@ Source Stream identification.
 This ID is used to identify streams and connect to the source stream channel.
 for example in tvheadend http://tvheadend:9981/stream/channel/{id}
 
+## Requirements
+- jre8 or docker > 1.9
+- Http Live Streaming Source
+
 ## Configuration
 ```yml
 source:
@@ -58,3 +62,12 @@ buffers:
 ```bash
 docker run -d -v /my/application.yml:/app/application.yml segator/proxylive
 ```
+## RoadMap
+- [ ] RTMP Input
+- [ ] HLS Input
+- [ ] Dash Input
+- [ ] RTMP Output(I not sure if I'm going to implement it because you can mix this app with nginx to have this feature)
+- [ ] Dash Output(I not sure if I'm going to implement it because you can mix this app with nginx to have this feature)
+- [ ] HLS Output(I not sure if I'm going to implement it because you can mix this app with nginx to have this feature)
+- [x] MPEG-TS
+- [ ] Refactor(This application is a Prove of concept, the code is not clean enough and aren't tested to use in a production environment
