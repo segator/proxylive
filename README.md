@@ -63,11 +63,13 @@ buffers:
 docker run -d -v /my/application.yml:/app/application.yml segator/proxylive
 ```
 ## RoadMap
+- [ ] Multiple Source Input(Right now we only can work with a single source
 - [ ] RTMP Input
 - [ ] HLS Input
 - [ ] Dash Input
 - [ ] RTMP Output(I not sure if I'm going to implement it because you can mix this app with nginx to have this feature)
 - [ ] Dash Output(I not sure if I'm going to implement it because you can mix this app with nginx to have this feature)
 - [ ] HLS Output(I not sure if I'm going to implement it because you can mix this app with nginx to have this feature)
-- [x] MPEG-TS
+- [x] MPEG-TS Output
+- [X] Reconnect Source/transcoder on failure without disconnect clients,
 - [ ] Refactor(This application is a Prove of concept, the code is not clean enough and aren't tested to use in a production environment
