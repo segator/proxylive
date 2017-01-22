@@ -45,6 +45,7 @@ public class ProcessorTasks {
 
     private final Map<Thread, IStreamTask> httpSourceStreamTasks;
     private final Map<Thread, IStreamTask> transcodeTasks;
+    private final Map<Thread, IStreamTask> directTranscodeTasks;
     private final Map<Thread, IStreamTask> HLSTasks;
     private final Map<Thread, IStreamTask> HLSDirectTasks;
 
@@ -56,6 +57,7 @@ public class ProcessorTasks {
     public ProcessorTasks() {
         httpSourceStreamTasks = new HashMap();
         transcodeTasks = new HashMap();
+        directTranscodeTasks = new HashMap();
         HLSTasks = new HashMap();
         HLSDirectTasks = new HashMap();
     }
@@ -102,6 +104,8 @@ public class ProcessorTasks {
             return httpSourceStreamTasks;
         } else if (clazz.equals(TranscodeTask.class)) {
             return transcodeTasks;
+        } else if (clazz.equals(DirectTranscodeTask.class)) {
+            return directTranscodeTasks;
         } else if (clazz.equals(HLSTask.class)) {
             return HLSTasks;
         }
@@ -112,6 +116,7 @@ public class ProcessorTasks {
         Map<Thread, IStreamTask> allMaps = new HashMap();
         allMaps.putAll(httpSourceStreamTasks);
         allMaps.putAll(transcodeTasks);
+        allMaps.putAll(directTranscodeTasks);
         allMaps.putAll(HLSTasks);
         allMaps.putAll(HLSDirectTasks);
         return allMaps;

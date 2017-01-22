@@ -1,56 +1,41 @@
 /*
- * The MIT License
- *
- * Copyright 2017 Isaac Aymerich <isaac.aymerich@gmail.com>.
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
  */
 package com.github.segator.proxylive.tasks;
 
+import com.github.segator.proxylive.config.ProxyLiveConfiguration;
 import com.github.segator.proxylive.processor.IStreamMultiplexerProcessor;
 import com.github.segator.proxylive.processor.IStreamProcessor;
 import com.github.segator.proxylive.profiler.FFmpegProfilerService;
 import com.github.segator.proxylive.stream.BroadcastCircularBufferedOutputStream;
+import com.github.segator.proxylive.stream.WebInputStream;
 import com.github.segator.proxylive.stream.WithoutBlockingInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.URL;
 import java.util.Date;
 import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.annotation.PostConstruct;
-import com.github.segator.proxylive.config.ProxyLiveConfiguration;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  *
- * @author Isaac Aymerich <isaac.aymerich@gmail.com>
+ * @author isaac
  */
-public class TranscodeTask implements IMultiplexerStreamer {
+public class DirectTranscodeTask implements IMultiplexerStreamer {
 
     @Autowired
     private FFmpegProfilerService ffmpegProfilerService;
     @Autowired
     private ProxyLiveConfiguration config;
-    private final IStreamMultiplexerProcessor inputStreamProcessor;
+    private String url;
     private final String profile;
+    private final String channelName;
     private BroadcastCircularBufferedOutputStream multiplexerOutputStream;
     private String transcodeParameters;
     private Process process;
@@ -60,18 +45,16 @@ public class TranscodeTask implements IMultiplexerStreamer {
     private boolean internalCrash = false;
     private int crashedTimes = 0;
     private Thread errorReaderThread;
-    private Thread inputThread;
-    private InputStream sourceProcessorInputStream;
 
-    public TranscodeTask(IStreamMultiplexerProcessor inputStreamProcessor, String profile) {
-        this.inputStreamProcessor = inputStreamProcessor;
+    public DirectTranscodeTask(String channelName, String profile) {
         this.profile = profile;
+        this.channelName = channelName;
     }
 
     @PostConstruct
     public void initializeBean() {
-        multiplexerOutputStream = new BroadcastCircularBufferedOutputStream(config.getBuffers().getBroadcastBufferSize(), "trans");
-        sourceProcessorInputStream = new WithoutBlockingInputStream(inputStreamProcessor.getMultiplexedInputStream());
+        url = config.getSource().getUrl().replace("{id}", channelName);
+        multiplexerOutputStream = new BroadcastCircularBufferedOutputStream(config.getBuffers().getBroadcastBufferSize(), "http");
 
     }
 
@@ -89,12 +72,6 @@ public class TranscodeTask implements IMultiplexerStreamer {
             }
         } catch (InterruptedException ex) {
         }
-        try {
-            if (inputThread != null) {
-                inputThread.join();
-            }
-        } catch (InterruptedException ex) {
-        }
     }
 
     @Override
@@ -107,7 +84,7 @@ public class TranscodeTask implements IMultiplexerStreamer {
             if (isTerminated()) {
                 return;
             }
-            process = Runtime.getRuntime().exec(ffmpegExecutable + " -i pipe:0 " + transcodeParameters + " -f mpegts -");
+            process = Runtime.getRuntime().exec(ffmpegExecutable + " -i "+url+ " " + transcodeParameters + " -f mpegts -");
 
             errorReaderThread = new Thread("Transcoding Error Reader Thread:" + getIdentifier()) {
                 public void run() {
@@ -135,35 +112,8 @@ public class TranscodeTask implements IMultiplexerStreamer {
                     }
                 }
             };
-            inputThread = new Thread("Transcoding Source Input Thread:" + getIdentifier()) {
-                public void run() {
-                    byte[] buffer = new byte[32 * 1024];
-                    OutputStream outputStreamSource = process.getOutputStream();
-                    try {
-                        int read = 0;
-                        while (isRunning() && !isTerminated()) {
-                            if (internalCrash && !isTerminated()) {
-                                throw new IOException("Handled Crash event");
-                            }
-                            read = sourceProcessorInputStream.read(buffer);
-                            if (read > 0) {
-                                outputStreamSource.write(buffer, 0, read);
-                            } else {
-                                Thread.sleep(1);
-                            }
-                        }
-                        System.out.println("Saliendo Input Thread");
-                    } catch (Exception e) {
-                        if (!isTerminated()) {
-                            System.out.println("Error:" + e.getMessage());
-                            Logger.getLogger(TranscodeTask.class.getName()).log(Level.SEVERE, null, e);
-                            internalCrash = true;
-                        }
-                    }
-                }
-            };
+
             errorReaderThread.start();
-            inputThread.start();
             byte[] buffer = new byte[32 * 1024];
             InputStream is = new WithoutBlockingInputStream(process.getInputStream());
 
@@ -184,7 +134,7 @@ public class TranscodeTask implements IMultiplexerStreamer {
         } catch (Exception ex) {
             if (!isTerminated()) {
                 System.out.println("Error:" + ex.getMessage());
-                Logger.getLogger(TranscodeTask.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(DirectTranscodeTask.class.getName()).log(Level.SEVERE, null, ex);
                 internalCrash = true;
             }
         } finally {
@@ -193,11 +143,7 @@ public class TranscodeTask implements IMultiplexerStreamer {
             try {
                 errorReaderThread.join();
             } catch (Exception ex) {
-            }
-            try {
-                inputThread.join();
-            } catch (Exception ex) {
-            }
+            }           
         }
         if (!isTerminated() && internalCrash) {
             crashedTimes++;
@@ -215,7 +161,7 @@ public class TranscodeTask implements IMultiplexerStreamer {
     @Override
     public int hashCode() {
         int hash = 5;
-        hash = 31 * hash + Objects.hashCode(this.inputStreamProcessor);
+        hash = 31 * hash + Objects.hashCode(this.url);
         hash = 31 * hash + Objects.hashCode(this.profile);
         return hash;
     }
@@ -228,8 +174,8 @@ public class TranscodeTask implements IMultiplexerStreamer {
         if (getClass() != obj.getClass()) {
             return false;
         }
-        final TranscodeTask other = (TranscodeTask) obj;
-        if (!Objects.equals(this.inputStreamProcessor, other.inputStreamProcessor)) {
+        final DirectTranscodeTask other = (DirectTranscodeTask) obj;
+        if (!Objects.equals(this.url, other.url)) {
             return false;
         }
         if (!Objects.equals(this.profile, other.profile)) {
@@ -240,7 +186,7 @@ public class TranscodeTask implements IMultiplexerStreamer {
 
     @Override
     public String getIdentifier() {
-        return inputStreamProcessor.getTask().getIdentifier() + "_" + profile;
+        return channelName + "_" + profile;
     }
 
     @Override
@@ -293,7 +239,7 @@ public class TranscodeTask implements IMultiplexerStreamer {
 
     @Override
     public IStreamProcessor getSourceProcessor() {
-        return inputStreamProcessor;
+        return null;
     }
 
     @Override

@@ -119,7 +119,7 @@ public class TranscodedStreamProcessor implements IStreamMultiplexerProcessor {
     }
 
     private boolean isTaskRunning() {
-        return inputStreamProcessor.isConnected() && !transcodeTask.isCrashed();
+        return inputStreamProcessor.isConnected() && transcodeTask.isTerminated() && !transcodeTask.isCrashed();
     }
 
     @Override

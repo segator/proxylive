@@ -54,7 +54,8 @@ public class StreamProcessorFactory {
         if (profile==null) {
             streamProcessor = sourceStreamProcessor;
         } else {
-            streamProcessor = (IStreamProcessor) context.getBean("TranscodedStreamProcessor", identifier64, sourceStreamProcessor, profile);
+            //streamProcessor = (IStreamProcessor) context.getBean("TranscodedStreamProcessor", identifier64, sourceStreamProcessor, profile);
+            streamProcessor = (IStreamProcessor) context.getBean("DirectTranscodedStreamProcessor", identifier64, channel, profile);
         }
         IStreamProcessor postStreamProcessor = null;
         switch (mode) {
@@ -79,6 +80,11 @@ public class StreamProcessorFactory {
     @Scope(value = "prototype")
     public IStreamProcessor TranscodedStreamProcessor(String identifier,IStreamProcessor iStreamProcessor, String profile) {
         return new TranscodedStreamProcessor(iStreamProcessor, profile,identifier);
+    }
+    @Bean
+    @Scope(value = "prototype")
+    public IStreamProcessor DirectTranscodedStreamProcessor(String identifier,String channel, String profile) {
+        return new DirectTranscoderStreamProcessor(channel, profile,identifier);
     }
 
     @Bean

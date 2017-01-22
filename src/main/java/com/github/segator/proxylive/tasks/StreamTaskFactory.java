@@ -50,6 +50,12 @@ public class StreamTaskFactory {
     }
     @Bean
     @Scope(value = "prototype")
+    public DirectTranscodeTask DirectTranscodeTask(String channel, String profile) throws IOException {
+        return new DirectTranscodeTask(channel,profile);
+
+    }
+    @Bean
+    @Scope(value = "prototype")
     public HLSTask HLSTask(IStreamMultiplexerProcessor iStreamProcessor) throws IOException {
         return new HLSTask(iStreamProcessor);
 
