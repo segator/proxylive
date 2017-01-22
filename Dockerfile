@@ -7,8 +7,6 @@ ADD application.yml /app/application.yml
 ENV     LANG en_US.UTF-8
 ENV     LC_ALL en_US.UTF-8
 
-RUN yum install -y curl
-
 ENV JDK_VERSION 8u31
 ENV JDK_BUILD_VERSION b13
 
