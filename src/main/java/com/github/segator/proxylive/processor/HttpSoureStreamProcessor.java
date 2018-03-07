@@ -63,7 +63,7 @@ public class HttpSoureStreamProcessor implements IStreamMultiplexerProcessor, IS
                 tasks.runTask(streamingDownloaderTask);
                 streamingDownloaderRunningTask = streamingDownloaderTask;
             }
-            pip = streamingDownloaderRunningTask.getMultiplexer().getClientInputStream("http cli");
+            pip = streamingDownloaderRunningTask.getMultiplexer().getConsumer("http cli");
         }
     }
 
@@ -76,7 +76,7 @@ public class HttpSoureStreamProcessor implements IStreamMultiplexerProcessor, IS
         synchronized (tasks) {
             streamingDownloaderRunningTask.getMultiplexer().flush();
 
-            streamingDownloaderRunningTask.getMultiplexer().removeClientInputStream(pip);
+            streamingDownloaderRunningTask.getMultiplexer().removeClientConsumer(pip);
 
             if (force || streamingDownloaderRunningTask.getMultiplexer().getClientsList().isEmpty()) {
                 tasks.killTask(streamingDownloaderRunningTask);

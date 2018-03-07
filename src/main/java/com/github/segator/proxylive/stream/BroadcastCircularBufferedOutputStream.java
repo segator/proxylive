@@ -25,6 +25,7 @@ package com.github.segator.proxylive.stream;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -34,20 +35,16 @@ import java.util.List;
  */
 public class BroadcastCircularBufferedOutputStream extends OutputStream {
 
-    private final byte[] buffer;
-
-    private final int size;
-    private int pos;
+    private final ByteBuffer byteBuffer;
     private boolean filled;
-    private List<ClientBroadcastedInputStream> clientsList;
-    private String identifier;
+    private final List<ClientBroadcastedInputStream> clientsList;
+    private final String identifier;
 
-    public BroadcastCircularBufferedOutputStream(int size,String identifier) {
-        buffer = new byte[size];
-        this.size = size;
+    public BroadcastCircularBufferedOutputStream(int size, String identifier) {
         filled = false;
-        this.identifier=identifier;
+        this.identifier = identifier;
         clientsList = new ArrayList();
+        byteBuffer = ByteBuffer.allocateDirect(size);
 
     }
 
@@ -55,87 +52,43 @@ public class BroadcastCircularBufferedOutputStream extends OutputStream {
         return clientsList;
     }
 
-    public byte[] getBuffer() {
-        return buffer;
-    }
-
-    public synchronized int getSize() {
-        return size;
-    }
-
-    public synchronized int getPos() {
-        return pos;
-    }
-
     public synchronized boolean isFilled() {
         return filled;
     }
 
-    public synchronized ClientBroadcastedInputStream getClientInputStream(final String cla) {
-        ClientBroadcastedInputStream cli = new ClientBroadcastedInputStream() {
-
-            //private int cliPos = pos;
-            private int cliPos = 0;
-            private int sleeps = 0;
-
-            @Override
-            public int available() throws IOException {
-                int available=0;
-                if (filled || cliPos > pos) {
-                    available= size - cliPos + pos;
-                } else {
-                    available= pos - cliPos;
-                }
-                return available;
-            }
-
-            @Override
-            public int read() throws IOException {
-                int readed = -1;
-                if (cliPos < getPos()) {
-                    readed = buffer[cliPos++];
-                    sleeps = 0;
-                } else if (filled && cliPos > getPos()) {
-                    readed = buffer[cliPos++];
-                    sleeps = 0;
-                } else {
-                    if (sleeps == 300) {
-                        throw new IOException("No data received");
-                    }
-                    try {
-                        Thread.sleep(100);
-                    } catch (InterruptedException ex) {
-                        throw new IOException("Interrupted waiting");
-                    }
-                    sleeps++;
-                    readed = read();
-                }
-                if (cliPos == getSize()) {
-                    System.out.println("jump"+cla);
-                    cliPos = 0;
-                }
-                return readed & 0xFF;
-            }
-        };
-        clientsList.add(cli);
-        return cli;
-    }
-
-    public synchronized boolean removeClientInputStream(ClientBroadcastedInputStream is) {
+    public synchronized boolean removeClientConsumer(ClientBroadcastedInputStream is) {
         return clientsList.remove(is);
     }
-      public synchronized void removeAllInputStream() {
+
+    public synchronized void removeAllConsumers() {
         clientsList.clear();
     }
 
     @Override
     public synchronized void write(int b) throws IOException {
-        buffer[pos++] = (byte) (b & 0xFF);
-        if (pos == size) {
-            System.out.println("filled "+identifier);
+        byteBuffer.put((byte)(b & 0xFF));
+        if (byteBuffer.position() == byteBuffer.limit()) {
             filled = true;
-            pos = 0;
+            byteBuffer.rewind();
         }
     }
 
+    @Override
+    public void write(byte b[], int off, int len) throws IOException {
+        if (byteBuffer.position() + len > byteBuffer.limit()) {
+            int writeLen = byteBuffer.limit() - byteBuffer.position();
+            byteBuffer.put(b, off, writeLen);
+            filled=true;
+            byteBuffer.rewind();
+            byteBuffer.put(b, writeLen, len - writeLen);
+        } else {
+            byteBuffer.put(b, off, len);
+        }
+    }
+
+    public synchronized ClientBroadcastedInputStream getConsumer(String id) {
+        ClientBroadcastedInputStream clientInputStream  = new ClientBroadcastedInputStream(byteBuffer,id);
+        clientsList.add(clientInputStream);
+        return clientInputStream;
+    }
 }

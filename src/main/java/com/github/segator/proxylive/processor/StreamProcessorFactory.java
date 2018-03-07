@@ -51,7 +51,7 @@ public class StreamProcessorFactory {
         HttpSoureStreamProcessor sourceStreamProcessor = (HttpSoureStreamProcessor) context.getBean("HttpSoureStreamProcessor", identifier64, channel);
 
         IStreamProcessor streamProcessor = null;
-        if (profile==null) {
+        if (profile==null || profile.equals("raw")) {
             streamProcessor = sourceStreamProcessor;
         } else {
             //streamProcessor = (IStreamProcessor) context.getBean("TranscodedStreamProcessor", identifier64, sourceStreamProcessor, profile);

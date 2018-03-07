@@ -133,7 +133,7 @@ public class HLSTask implements IStreamTask {
             }
             String ffmpegExecutable = "ffmpeg";
             if (ProxyLiveUtils.getOS().equals("win")) {
-                ffmpegExecutable = "C:\\Users\\isaac\\Documents\\NetBeansProjects\\ProxyLive\\ffmpeg.exe";
+                ffmpegExecutable =ffmpegProfilerService.getFFMpegExecutable();;
             }
             if (isTerminated()) {
                 return;

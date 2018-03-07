@@ -157,7 +157,7 @@ public class ProcessorTasks {
     public void stopTask(IStreamTask iStreamTask) {
         try {
             if (iStreamTask instanceof IMultiplexerStreamer) {
-                ((IMultiplexerStreamer) iStreamTask).getMultiplexer().removeAllInputStream();
+                ((IMultiplexerStreamer) iStreamTask).getMultiplexer().removeAllConsumers();
             }
 
             killTask(iStreamTask);

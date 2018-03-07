@@ -47,7 +47,8 @@ public class DirectTranscoderStreamProcessor implements IStreamMultiplexerProces
                 tasks.runTask(streamingDownloaderTask);
                 streamingDownloaderRunningTask = streamingDownloaderTask;
             }
-            pip = streamingDownloaderRunningTask.getMultiplexer().getClientInputStream("transcoded direct cli");
+            //pip = streamingDownloaderRunningTask.getMultiplexer().getClientInputStream("transcoded direct cli");
+            pip = streamingDownloaderRunningTask.getMultiplexer().getConsumer("transcoded direct cli");
         }
     }
 
@@ -60,7 +61,7 @@ public class DirectTranscoderStreamProcessor implements IStreamMultiplexerProces
         synchronized (tasks) {
             streamingDownloaderRunningTask.getMultiplexer().flush();
 
-            streamingDownloaderRunningTask.getMultiplexer().removeClientInputStream(pip);
+            streamingDownloaderRunningTask.getMultiplexer().removeClientConsumer(pip);
 
             if (force || streamingDownloaderRunningTask.getMultiplexer().getClientsList().isEmpty()) {
                 tasks.killTask(streamingDownloaderRunningTask);

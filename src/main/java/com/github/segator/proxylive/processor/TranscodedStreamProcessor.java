@@ -70,7 +70,7 @@ public class TranscodedStreamProcessor implements IStreamMultiplexerProcessor {
                 transcodeTask = transcodeTaskTmp;
 
             }
-            pip = transcodeTask.getMultiplexer().getClientInputStream("trans cli");
+            pip = transcodeTask.getMultiplexer().getConsumer("trans cli");
 
         }
     }
@@ -80,7 +80,7 @@ public class TranscodedStreamProcessor implements IStreamMultiplexerProcessor {
         synchronized (tasks) {
             System.out.println("Killing Transcode Processor");
             System.out.println("Clients Running Transcode Task:"+transcodeTask.getMultiplexer().getClientsList().size());
-            transcodeTask.getMultiplexer().removeClientInputStream(pip);
+            transcodeTask.getMultiplexer().removeClientConsumer(pip);
             System.out.println("Clients Running Transcode Task:"+transcodeTask.getMultiplexer().getClientsList().size());
             if (force || transcodeTask.getMultiplexer().getClientsList().isEmpty()) {
                 System.out.println("require kill transcode:" + profile);
