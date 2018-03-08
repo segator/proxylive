@@ -42,6 +42,7 @@ public interface IStreamProcessor {
     
     public IStreamTask getTask();
 
-    public String getIdentifier();
+    public String getIdentifier();    
+    
 
 }

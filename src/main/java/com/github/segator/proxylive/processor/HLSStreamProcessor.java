@@ -38,7 +38,7 @@ import org.springframework.context.ApplicationContext;
  *
  * @author Isaac Aymerich <isaac.aymerich@gmail.com>
  */
-public class HLSStreamProcessor implements IStreamProcessor,IHLSStreamProcessor {
+public class HLSStreamProcessor implements IStreamProcessor, IHLSStreamProcessor {
 
     @Autowired
     private ProcessorTasks tasks;
@@ -48,9 +48,9 @@ public class HLSStreamProcessor implements IStreamProcessor,IHLSStreamProcessor 
     private HLSTask hlsTask;
     private final String identifier;
 
-    public HLSStreamProcessor(IStreamProcessor inputStreamProcessor,String identifier) {
+    public HLSStreamProcessor(IStreamProcessor inputStreamProcessor, String identifier) {
         this.inputStreamProcessor = inputStreamProcessor;
-        this.identifier=identifier;
+        this.identifier = identifier;
     }
 
     @Override
@@ -67,18 +67,18 @@ public class HLSStreamProcessor implements IStreamProcessor,IHLSStreamProcessor 
                 tasks.runTask(hlsTaskTmp);
                 hlsTask = hlsTaskTmp;
             }
-        
+
         }
     }
 
     @Override
     public void stop(boolean force) throws IOException {
-            tasks.killTask(hlsTask);
+        tasks.killTask(hlsTask);
         inputStreamProcessor.stop(false);
     }
 
     @Override
-    public boolean isConnected() {        
+    public boolean isConnected() {
         synchronized (tasks) {
             boolean connected = isTaskRunning();
             if (!connected) {
@@ -118,28 +118,32 @@ public class HLSStreamProcessor implements IStreamProcessor,IHLSStreamProcessor 
             return false;
         }
         final HLSStreamProcessor other = (HLSStreamProcessor) obj;
-        if (!Objects.equals(this.hlsTask, other.hlsTask)) {
-            return false;
-        }
-        return true;
+        return Objects.equals(this.hlsTask, other.hlsTask);
     }
 
+    @Override
     public InputStream getPlayList() throws IOException, URISyntaxException {
-      return  hlsTask.getPlayList();
+        return hlsTask.getPlayList();
     }
 
+    @Override
     public InputStream getSegment(String segment) throws FileNotFoundException {
-       return hlsTask.getSegment(segment);
+        return hlsTask.getSegment(segment);
     }
+
+    @Override
     public long getSegmentSize(String segment) throws FileNotFoundException {
-       return hlsTask.getSegmentSize(segment);
+        return hlsTask.getSegmentSize(segment);
     }
 
     @Override
     public String getIdentifier() {
-       return identifier;
+        return identifier;
     }
 
-
+    @Override
+    public String toString() {
+        return "HLSStreamProcessor{" + "identifier=" + identifier + '}';
+    }
 
 }

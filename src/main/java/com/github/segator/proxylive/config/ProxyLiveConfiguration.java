@@ -38,6 +38,7 @@ public class ProxyLiveConfiguration {
     private BufferingConfiguration buffers;
     private FFMpegConfiguration ffmpeg;
     private HttpLiveSource source;
+    private AuthenticationConfiguration authentication;
 
     public FFMpegConfiguration getFfmpeg() {
         return ffmpeg;
@@ -61,6 +62,14 @@ public class ProxyLiveConfiguration {
 
     public void setBuffers(BufferingConfiguration buffers) {
         this.buffers = buffers;
+    }
+
+    public AuthenticationConfiguration getAuthentication() {
+        return authentication;
+    }
+
+    public void setAuthentication(AuthenticationConfiguration authentication) {
+        this.authentication = authentication;
     }
 
 }

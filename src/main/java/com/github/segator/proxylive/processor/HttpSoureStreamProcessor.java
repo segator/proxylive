@@ -147,4 +147,8 @@ public class HttpSoureStreamProcessor implements IStreamMultiplexerProcessor, IS
         return identifier;
     }
 
+    @Override
+    public String toString() {
+        return "HttpSoureStreamProcessor{" + "channel=" + channel + ", identifier=" + identifier + '}';
+    }
 }

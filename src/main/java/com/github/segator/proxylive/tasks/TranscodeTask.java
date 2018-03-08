@@ -125,7 +125,6 @@ public class TranscodeTask implements IMultiplexerStreamer {
                                 Thread.sleep(5);
                             }
                         }
-                        System.out.println("Saliendo Error Thread");
                     } catch (Exception e) {
                         if (!isTerminated()) {
                             System.out.println("Error:" + e.getMessage());
@@ -180,7 +179,6 @@ public class TranscodeTask implements IMultiplexerStreamer {
                     Thread.sleep(5);
                 }
             }
-            System.out.println("que pasa dudeeeeeeeeeeeeee");
         } catch (Exception ex) {
             if (!isTerminated()) {
                 System.out.println("Error:" + ex.getMessage());
@@ -188,7 +186,6 @@ public class TranscodeTask implements IMultiplexerStreamer {
                 internalCrash = true;
             }
         } finally {
-            System.out.println("LOL1");
             stopProcess();
             try {
                 errorReaderThread.join();

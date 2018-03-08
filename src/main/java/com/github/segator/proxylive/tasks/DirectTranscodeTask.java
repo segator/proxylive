@@ -53,7 +53,7 @@ public class DirectTranscodeTask implements IMultiplexerStreamer {
 
     @PostConstruct
     public void initializeBean() {
-        url = config.getSource().getUrl().replace("{id}", channelName);
+        url = config.getSource().getTvheadendurl() + "/stream/channel/" + channelName;
         multiplexerOutputStream = new BroadcastCircularBufferedOutputStream(config.getBuffers().getBroadcastBufferSize(), "http");
 
     }
@@ -84,7 +84,7 @@ public class DirectTranscodeTask implements IMultiplexerStreamer {
             if (isTerminated()) {
                 return;
             }
-            process = Runtime.getRuntime().exec(ffmpegExecutable + " -i "+url+ " " + transcodeParameters + " -f mpegts -");
+            process = Runtime.getRuntime().exec(ffmpegExecutable + " -i " + url + " " + transcodeParameters + " -f mpegts -");
 
             errorReaderThread = new Thread("Transcoding Error Reader Thread:" + getIdentifier()) {
                 public void run() {
@@ -102,7 +102,6 @@ public class DirectTranscodeTask implements IMultiplexerStreamer {
                                 Thread.sleep(5);
                             }
                         }
-                        System.out.println("Saliendo Error Thread");
                     } catch (Exception e) {
                         if (!isTerminated()) {
                             System.out.println("Error:" + e.getMessage());
@@ -130,7 +129,6 @@ public class DirectTranscodeTask implements IMultiplexerStreamer {
                     Thread.sleep(5);
                 }
             }
-            System.out.println("que pasa dudeeeeeeeeeeeeee");
         } catch (Exception ex) {
             if (!isTerminated()) {
                 System.out.println("Error:" + ex.getMessage());
@@ -138,12 +136,11 @@ public class DirectTranscodeTask implements IMultiplexerStreamer {
                 internalCrash = true;
             }
         } finally {
-            System.out.println("LOL1");
             stopProcess();
             try {
                 errorReaderThread.join();
             } catch (Exception ex) {
-            }           
+            }
         }
         if (!isTerminated() && internalCrash) {
             crashedTimes++;

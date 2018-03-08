@@ -59,7 +59,7 @@ public class HttpDownloaderTask implements IMultiplexerStreamer {
 
     @PostConstruct
     public void initializeBean() throws Exception {
-        url = config.getSource().getUrl().replace("{id}", channelName);
+        url = config.getSource().getTvheadendurl() + "/stream/channel/" + channelName;
         buffer = new byte[config.getBuffers().getChunkSize()];
         webInputStream = new WebInputStream(new URL(url), config.getSource().getReconnectTimeout());
         multiplexerOutputStream = new BroadcastCircularBufferedOutputStream(config.getBuffers().getBroadcastBufferSize(), "http");

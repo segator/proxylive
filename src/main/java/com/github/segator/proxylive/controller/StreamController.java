@@ -26,18 +26,31 @@ package com.github.segator.proxylive.controller;
 import com.github.segator.proxylive.ProxyLiveConstants;
 import com.github.segator.proxylive.ProxyLiveUtils;
 import com.github.segator.proxylive.entity.ClientInfo;
-import com.github.segator.proxylive.processor.HLSStreamProcessor;
-import com.github.segator.proxylive.processor.IHLSStreamProcessor;
 import com.github.segator.proxylive.processor.IStreamMultiplexerProcessor;
 import com.github.segator.proxylive.tasks.StreamProcessorsSession;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.URISyntaxException;
-import java.util.Date;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import com.github.segator.proxylive.config.ProxyLiveConfiguration;
+import com.github.segator.proxylive.processor.HLSStreamProcessor;
+import com.github.segator.proxylive.processor.IHLSStreamProcessor;
+import com.github.segator.proxylive.service.AuthenticationService;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.ProtocolException;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.util.Base64;
+import java.util.Date;
+import java.util.List;
+import static org.hibernate.validator.internal.util.CollectionHelper.newArrayList;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.http.HttpHeaders;
@@ -47,6 +60,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 /**
@@ -60,21 +74,22 @@ public class StreamController {
     private ApplicationContext context;
     @Autowired
     private ProxyLiveConfiguration config;
+    @Autowired
+    private AuthenticationService authService;
 
     @Autowired
     private StreamProcessorsSession streamProcessorsSession;
 
-
-
-    @RequestMapping(value = "/view//{channel}")
-    public void dispatchStream(@PathVariable("channel") String channel,
-            HttpServletRequest request, HttpServletResponse response) throws  Exception {
-        dispatchStream(null, channel, request, response);
-    }
-
     @RequestMapping(value = "/view/{profile}/{channel}")
     public void dispatchStream(@PathVariable("profile") String profile, @PathVariable("channel") String channel,
-            HttpServletRequest request, HttpServletResponse response) throws Exception {
+            HttpServletRequest request, HttpServletResponse response,
+            @RequestParam("user") String user, @RequestParam("pass") String pass) throws Exception {
+
+        if (!authService.loginUser(user, pass)) {
+            response.setStatus(404);
+            return;
+        }
+
         String clientIdentifier = ProxyLiveUtils.getRequestIP(request) + ProxyLiveUtils.getBrowserInfo(request);
         IStreamMultiplexerProcessor iStreamProcessor = (IStreamMultiplexerProcessor) context.getBean("StreamProcessor", ProxyLiveConstants.STREAM_MODE, clientIdentifier, channel, profile);
         ClientInfo client = streamProcessorsSession.manage(iStreamProcessor, request);
@@ -105,12 +120,10 @@ public class StreamController {
                 }
             }
 
-            System.out.println("stopping from controller");
             iStreamProcessor.stop(false);
             streamProcessorsSession.removeClientInfo(client, iStreamProcessor);
 
         } else {
-            System.out.println("stopping from controller (not conected)");
             iStreamProcessor.stop(false);
             streamProcessorsSession.removeClientInfo(client, iStreamProcessor);
             response.setStatus(HttpStatus.NOT_FOUND.value());
@@ -128,9 +141,115 @@ public class StreamController {
                 + "</cross-domain-policy>";
     }
 
+    @RequestMapping(value = "icon/{iconID}", method = RequestMethod.GET)
+    public void getIcon(@PathVariable("iconID") String iconPath, HttpServletResponse response) throws IOException {
+        HttpURLConnection connection = getURLConnection("imagecache/" + iconPath);
+        if (connection.getResponseCode() != 200) {
+            response.setStatus(connection.getResponseCode());
+            return;
+        }
+        response.setStatus(200);
+        InputStream iconStream = connection.getInputStream();
+        //response.setHeader(file, file);
+        byte[] buffer = new byte[1024];
+        OutputStream output = response.getOutputStream();
+        int len = 0;
+        try {
+            while ((len = iconStream.read(buffer)) != -1) {
+                output.write(buffer, 0, len);
+            }
+        } catch (Exception ex) {
+
+        } finally {
+            try {
+                output.close();
+            } catch (Exception ex2) {
+            }
+            try {
+                iconStream.close();
+            } catch (Exception ex2) {
+            }
+        }
+    }
+
+    @RequestMapping(value = "channel/list/{format:^mpeg|hls$}/{profile}", method = RequestMethod.GET)
+    public @ResponseBody
+    String generatePlaylist(HttpServletRequest request, HttpServletResponse response, @PathVariable("profile") String profile, @PathVariable("format") String format,
+            @RequestParam("user") String user, @RequestParam("pass") String pass) throws MalformedURLException, ProtocolException, IOException, ParseException, Exception {
+        if (!authService.loginUser(user, pass)) {
+            response.setStatus(404);
+            return "Invalid login";
+        }
+        StringBuffer buffer = new StringBuffer();
+        String requestBaseURL = String.format("%s://%s:%s", request.getScheme(), request.getServerName(), request.getServerPort());
+        JSONArray channels = (JSONArray) getTvheadendResponse("api/channel/grid").get("entries");
+        List<String> userAllowedTags = getAllowedTags(null, null, null);
+
+        buffer.append("#EXTM3U").append("\n");
+        for (Object ochannel : channels) {
+            JSONObject channel = (JSONObject) ochannel;
+            if (isChannelAllowed(userAllowedTags, channel)) {
+                buffer.append("#EXTINF:-1 tvg-logo=\"").append(String.format("%s/icon/%s", requestBaseURL, channel.get("icon_public_url").toString().split("/")[1])).
+                        append("\" tvg-name=\"").append(channel.get("name")).append("\" type=").append(format).append(",").
+                        append(String.format("%s", channel.get("name"))).append("\n");
+                if (format.equals("mpeg")) {
+                    buffer.append(String.format("%s/view/%s/%s", requestBaseURL, profile, channel.get("uuid"))).append("?user=").append(user).append("&pass=").append(pass).append("\n");
+                } else if (format.equals("hls")) {
+                    buffer.append(String.format("%s/view/%s/%s", requestBaseURL, profile, channel.get("uuid"))).append("playlist.m3u8").append("?user=").append(user).append("&pass=").append(pass).append("\n");
+                }
+            }
+        }
+        response.setHeader("Content-Disposition", "attachment; filename=playlist.m3u8");
+        return buffer.toString();
+    }
+
+    private boolean isChannelAllowed(List<String> userAllowedTags, JSONObject channel) {
+        return (Boolean) channel.get("enabled") && ((JSONArray) channel.get("tags")).stream().anyMatch(tag -> userAllowedTags.stream().anyMatch(validTag -> validTag.equals(tag)));
+    }
+
+    private List<String> getAllowedTags(String user, String pass, List<String> groups) throws ProtocolException, IOException, MalformedURLException, ParseException {
+        JSONArray tags = (JSONArray) getTvheadendResponse("api/channeltag/list").get("entries");
+        List<String> validsTags = newArrayList();
+        for (Object otag : tags) {
+            JSONObject tag = (JSONObject) otag;
+            tag.get("val");
+            validsTags.add(tag.get("key").toString());
+        }
+        return validsTags;
+    }
+
+    private HttpURLConnection getURLConnection(String request) throws MalformedURLException, IOException {
+        URL tvheadendURL = new URL(config.getSource().getTvheadendurl() + "/" + request);
+        HttpURLConnection connection = (HttpURLConnection) tvheadendURL.openConnection();
+        connection.setReadTimeout(10000);
+        if (tvheadendURL.getUserInfo() != null) {
+            String basicAuth = "Basic " + new String(Base64.getEncoder().encode(tvheadendURL.getUserInfo().getBytes()));
+            connection.setRequestProperty("Authorization", basicAuth);
+        }
+        connection.setRequestMethod("GET");
+        connection.connect();
+        return connection;
+    }
+
+    private JSONObject getTvheadendResponse(String request) throws MalformedURLException, ProtocolException, IOException, ParseException {
+        JSONParser jsonParser = new JSONParser();
+        HttpURLConnection connection = getURLConnection(request);
+        if (connection.getResponseCode() != 200) {
+            throw new IOException("Error on open stream:" + request);
+        }
+        return (JSONObject) jsonParser.parse(new InputStreamReader(connection.getInputStream(), "UTF-8"));
+
+    }
+
     @RequestMapping(value = "/view/{profile}/{channel}/{file:^(?i)playlist.m3u8|playlist\\d*.ts$}", method = RequestMethod.GET)
     public void dispatchHLS(@PathVariable("profile") String profile, @PathVariable("channel") String channel,
-            @PathVariable String file, HttpServletRequest request, HttpServletResponse response) throws Exception {
+            @PathVariable String file, HttpServletRequest request, HttpServletResponse response,
+            @RequestParam("user") String user, @RequestParam("pass") String pass) throws Exception {
+
+        if (!authService.loginUser(user, pass)) {
+            response.setStatus(404);
+            return;
+        }
         String clientIdentifier = ProxyLiveUtils.getRequestIP(request) + ProxyLiveUtils.getBrowserInfo(request);
         HLSStreamProcessor hlsStreamProcessor = streamProcessorsSession.getHLSStream(ProxyLiveUtils.getRequestIP(request), channel, profile);
         if (hlsStreamProcessor == null) {

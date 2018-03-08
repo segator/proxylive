@@ -131,5 +131,11 @@ public class DirectTranscoderStreamProcessor implements IStreamMultiplexerProces
     public String getIdentifier() {
         return identifier;
     }
+
+    @Override
+    public String toString() {
+        return "DirectTranscoderStreamProcessor{" + "channel=" + channel + ", profile=" + profile + ", identifier=" + identifier + '}';
+    }
+    
     
 }

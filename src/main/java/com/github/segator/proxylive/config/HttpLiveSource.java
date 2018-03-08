@@ -29,16 +29,16 @@ package com.github.segator.proxylive.config;
  */
 public class HttpLiveSource {
 
-    private String url;
+    private String tvheadendurl;
     private int reconnectTimeout;
 
 
-    public String getUrl() {
-        return url;
+    public String getTvheadendurl() {
+        return tvheadendurl;
     }
 
-    public void setUrl(String url) {
-        this.url = url;
+    public void setTvheadendurl(String url) {
+        this.tvheadendurl = url;
     }
 
     public int getReconnectTimeout() {
