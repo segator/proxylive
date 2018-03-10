@@ -4,14 +4,14 @@ This application allow you to transcode and broadcast on demand a http mpeg ts t
 you only need to define source http live streaming and start the application
 after all
 
-##Url Definition
+## Url Definition
 you could get a broadcasted stream from
 http://{server}:8080/view/{profile}/{id}
 
 If you want the full channel list
 http://[server]:8080/channel/list/[format]/[profile]
 in case of auth enabled
-http://[server]:8080/channel/list/[format]/[profile]?user=<clientUser>&pass=<clientPass>
+http://[server]:8080/channel/list/[format]/[profile]?user=clientUser&pass=clientPass
 
 #### server
 ip or domain of the host where the application is running
@@ -71,7 +71,7 @@ buffers:
 ```
 You can use plex authentication or ldap, adding this in the application.yml
 all your plex friends that have the option "allow channels" will have access to stream from proxylive
-```
+```yml
 authentication:
     #For plex auth
     plex:
@@ -94,8 +94,8 @@ http://localhost:8080/channel/list/mpeg/1080p?user=myplexuser&pass=myplexpass
 ```
 
 ### Load Configuration from consul
-You will need to create a file bootsrap.yml with this format
-```
+You will need to create a file bootstrap.yml with this format
+```yml
 spring:
     application:
         name: proxylive
