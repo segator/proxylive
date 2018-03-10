@@ -5,6 +5,8 @@
  */
 package com.github.segator.proxylive.config;
 
+import org.springframework.cloud.context.config.annotation.RefreshScope;
+
 /**
  *
  * @author isaac

@@ -5,7 +5,6 @@
  */
 package com.github.segator.proxylive.service;
 
-import com.github.segator.proxylive.config.AuthenticationConfiguration;
 import com.github.segator.proxylive.config.ProxyLiveConfiguration;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -22,6 +21,9 @@ public class AuthenticationServiceFactory {
     private ProxyLiveConfiguration configuration;
     @Bean
     public AuthenticationService createAuthenticationService() {
+        if(configuration.getAuthentication()==null){
+            return new WithoutAuthenticationService();
+        }
         if(configuration.getAuthentication().getLdap()!=null){
             return new LDAPAuthenticationService();
         }else if(configuration.getAuthentication().getPlex()!=null){

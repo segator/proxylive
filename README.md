@@ -5,8 +5,14 @@ you only need to define source http live streaming and start the application
 after all
 
 ##Url Definition
-you could get a transcoded stream from
+you could get a broadcasted stream from
 http://{server}:8080/view/{profile}/{id}
+
+If you want the full channel list
+http://[server]:8080/channel/list/[format]/[profile]
+in case of auth enabled
+http://[server]:8080/channel/list/[format]/[profile]?user=<clientUser>&pass=<clientPass>
+
 #### server
 ip or domain of the host where the application is running
 
@@ -19,15 +25,21 @@ Source Stream identification.
 This ID is used to identify streams and connect to the source stream channel.
 for example in tvheadend http://tvheadend:9981/stream/channel/{id}
 
+#### format
+The format the server will stream the live streaming.
+mpeg: mpegts stream
+hls: hls stream
+if you don't know what to choose, use mpeg
+
 ## Requirements
 - jre8 or docker > 1.9
 - Http Live Streaming Source
 
-## Configuration
+## Configuration /app/application.yml
 ```yml
 source:
     #My Tvheadend source instance
-    url: http://tvheadend:9981/stream/channel/{id}
+    tvheadendurl: http://tvheadend:9981/stream/channel/{id}
     #In case of source connection problem, retry connection in 10 seconds
     reconnectTimeout: 10
 ffmpeg:
@@ -57,19 +69,61 @@ buffers:
     #Buffer size of the broadcast buffer,larger buffer more stable but larger delay than source stream, default 50MB
     broadcastBufferSize: 52428800
 ```
+You can use plex authentication or ldap, adding this in the application.yml
+all your plex friends that have the option "allow channels" will have access to stream from proxylive
+```
+authentication:
+    #For plex auth
+    plex:
+        adminUser: "plexOwnerUser"
+        adminPass: "plexOwnerPass"
+        serverName: "MyPlexServerName"
+    
+    #For LDAP auth (not implemented yet)    
+    ldap:
+        server: "ldap://server:389"
+        username: "user"
+        pass: "pass"
+        searchBase: "dc=ad,dc=my-domain,dc=com"
+```
 
+
+Client users will connect attaching to the URL  ?user=user&pass=pass
+```
+http://localhost:8080/channel/list/mpeg/1080p?user=myplexuser&pass=myplexpass
+```
+
+### Load Configuration from consul
+You will need to create a file bootsrap.yml with this format
+```
+spring:
+    application:
+        name: proxylive
+    cloud:
+        consul:
+            host: consulip
+            port: consulport
+```
+then you don't need to override application.yml, all the parameters will be loaded from consul
+go to Key/Value 
+and create the parameters with next format
+```
+config/proxylive/my/key/path
+#Example
+config/proxylive/source/tvheadendurl = http://tvhUser:tvhPass@mytvhServer:9981/
+```
 ## Run in docker
 ```bash
 docker run -d -v /my/application.yml:/app/application.yml segator/proxylive
 ```
 ## RoadMap
 - [ ] Multiple Source Input(Right now we only can work with a single source
-- [ ] RTMP Input
-- [ ] HLS Input
-- [ ] Dash Input
 - [ ] RTMP Output(I not sure if I'm going to implement it because you can mix this app with nginx to have this feature)
 - [ ] Dash Output(I not sure if I'm going to implement it because you can mix this app with nginx to have this feature)
-- [ ] HLS Output(I not sure if I'm going to implement it because you can mix this app with nginx to have this feature)
+- [X] HLS Output(implemented but not tested)
 - [x] MPEG-TS Output
 - [X] Reconnect Source/transcoder on failure without disconnect clients,
+- [X] Plex Authentication
+- [ ] LDAP Authentication
+- [X] Playlist Generator
 - [ ] Refactor(This application is a Prove of concept, the code is not clean enough and aren't tested to use in a production environment
