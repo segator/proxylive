@@ -182,6 +182,9 @@ public class StreamController {
         }
         StringBuffer buffer = new StringBuffer();
         String requestBaseURL = String.format("%s://%s:%s", request.getScheme(), request.getServerName(), request.getServerPort());
+        if(config.getEndpoint()!=null){
+            requestBaseURL = config.getEndpoint();
+        }
         JSONArray channels = (JSONArray) getTvheadendResponse("api/channel/grid").get("entries");
         List<String> userAllowedTags = getAllowedTags(null, null, null);
 

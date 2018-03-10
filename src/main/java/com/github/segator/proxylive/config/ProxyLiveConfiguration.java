@@ -41,6 +41,7 @@ public class ProxyLiveConfiguration {
     private FFMpegConfiguration ffmpeg;
     private HttpLiveSource source;
     private AuthenticationConfiguration authentication;
+    private String endpoint;
 
     public FFMpegConfiguration getFfmpeg() {
         return ffmpeg;
@@ -74,4 +75,11 @@ public class ProxyLiveConfiguration {
         this.authentication = authentication;
     }
 
+    public String getEndpoint() {
+        return endpoint;
+    }
+
+    public void setEndpoint(String endpoint) {
+        this.endpoint = endpoint;
+    }
 }

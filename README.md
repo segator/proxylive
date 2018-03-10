@@ -68,6 +68,8 @@ buffers:
     chunkSize: 1048576
     #Buffer size of the broadcast buffer,larger buffer more stable but larger delay than source stream, default 50MB
     broadcastBufferSize: 52428800
+#Override the endpoint in the playlist(optional)
+endpoint: https://myendpoint.com
 ```
 You can use plex authentication or ldap, adding this in the application.yml
 all your plex friends that have the option "allow channels" will have access to stream from proxylive
