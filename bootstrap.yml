@@ -1,0 +1,8 @@
+spring:
+    application:
+        name: proxylive
+    cloud:
+        consul:
+            enabled: #enabled
+            host: #server
+            port: #port
