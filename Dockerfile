@@ -29,8 +29,12 @@ RUN yum update -y && \
     rm -rf /var/cache/yum
 
 ENV JAVA_HOME /usr/java/default
+COPY bootstrap.yml /app/bootstrap.yml
+COPY entrypoint.sh /entrypoint.sh
+ENV CONSUL_SERVER=""
+ENV CONSUL_PORT=""
 EXPOSE 8080
 
 WORKDIR /app
 
-ENTRYPOINT ["java", "-jar", "/app/proxyLive.jar"]
+ENTRYPOINT ["/entrypoint.sh"]
