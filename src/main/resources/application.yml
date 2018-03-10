@@ -11,8 +11,14 @@ ffmpeg:
             alias: "raw"
             parameters: "-c:a copy -c:v copy -threads 0 -f mpegts"
         -
+            alias: "360p"
+            parameters: "-c:a:0 libfdk_aac -b:a 128k -c:v libx264 -tune zerolatency -g 10 -vprofile high -level 3.0 -crf 18 -movflags +faststart -bufsize 15000k -maxrate 700k  -preset fast -vf scale=-1:360,yadif=0 -threads 0 -f mpegts"
+        -
+            alias: "480p"
+            parameters: "-c:a:0 libfdk_aac -b:a 196k -c:v libx264 -tune zerolatency -g 10 -vprofile high -level 3.0 -crf 18 -movflags +faststart -bufsize 15000k -maxrate 1500k  -preset fast -vf scale=-1:480,yadif=0 -threads 0 -f mpegts"
+        -
             alias: "720p"
-            parameters: "-c:a:0 aac -b:a 320k -c:v libx264 -tune zerolatency -g 10 -vprofile high -level 4.0 -crf 18 -movflags +faststart -bufsize 15000k -maxrate 3000k  -preset fast -vf \"scale=-1:720,yadif=0\" -threads 0 -f mpegts"
+            parameters: "-c:a:0 libfdk_aac -b:a 320k -c:v libx264 -tune zerolatency -g 10 -vprofile high -level 4.0 -crf 18 -movflags +faststart -bufsize 15000k -maxrate 3000k  -preset fast -vf scale=-1:720,yadif=0 -threads 0 -f mpegts"
         -
             alias: "1080p"
             parameters:  "-c:a:0 aac -b:a 320k -c:v libx264 -tune zerolatency -g 300 -vprofile high -level 4.0 -movflags +faststart -bufsize 15000k -maxrate 5000k  -preset fast -vf yadif=0 -threads 0 -f mpegts"
