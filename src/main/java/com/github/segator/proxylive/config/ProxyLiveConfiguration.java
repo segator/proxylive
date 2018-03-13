@@ -24,7 +24,7 @@
 package com.github.segator.proxylive.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.cloud.context.config.annotation.RefreshScope;
+
 
 import org.springframework.context.annotation.Configuration;
 
@@ -32,7 +32,6 @@ import org.springframework.context.annotation.Configuration;
  *
  * @author Isaac Aymerich <isaac.aymerich@gmail.com>
  */
-@RefreshScope
 @Configuration
 @ConfigurationProperties
 public class ProxyLiveConfiguration {

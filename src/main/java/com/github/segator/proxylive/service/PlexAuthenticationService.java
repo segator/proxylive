@@ -27,7 +27,6 @@ import org.json.simple.parser.ParseException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -84,7 +83,7 @@ public class PlexAuthenticationService implements AuthenticationService {
     private JSONObject getUserData(String user, String pass) throws MalformedURLException, IOException, ParseException {
         URL url = new URL(String.format("https://%s:%s@plex.tv/users/sign_in.json", user, pass));
         HttpURLConnection connection = createConnection(url);
-        connection.setRequestProperty("X-Plex-Client-Identifier", "asdaskjdhskjad324");
+        connection.setRequestProperty("X-Plex-Client-Identifier", "proxylive");
         connection.setRequestMethod("POST");
         connection.connect();
         if (connection.getResponseCode() != 201) {

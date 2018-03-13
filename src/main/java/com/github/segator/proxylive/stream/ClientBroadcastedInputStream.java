@@ -26,6 +26,7 @@ package com.github.segator.proxylive.stream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
+import java.nio.channels.InterruptedByTimeoutException;
 
 /**
  *
@@ -91,8 +92,13 @@ public class ClientBroadcastedInputStream extends InputStream {
 
         } else if (clientByteBuffer.position() <= sourcePosition) {
             try {
+                long waitTime = 0;
                 while (clientByteBuffer.position() == sourceByteBuffer.position()) {
                     Thread.sleep(10);
+                    waitTime+=10;
+                    if(waitTime>15000){
+                        throw new InterruptedByTimeoutException();
+                    }
                 }
             } catch (InterruptedException ex) {
                 throw new IOException("Interrupted waiting");

@@ -12,7 +12,7 @@ import java.util.List;
  *
  * @author isaac
  */
-public class WithoutAuthenticationService implements AuthenticationService{
+public class WithoutAuthenticationService implements AuthenticationService {
 
     @Override
     public boolean loginUser(String user, String password) throws Exception {
@@ -21,7 +21,9 @@ public class WithoutAuthenticationService implements AuthenticationService{
 
     @Override
     public List<String> getUserGroups(String user) {
-        return new ArrayList();
+        ArrayList<String> userGroups = new ArrayList();
+        userGroups.add("all");
+        return userGroups;
     }
-    
+
 }
