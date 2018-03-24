@@ -31,7 +31,8 @@ import java.util.List;
  * @author Isaac Aymerich <isaac.aymerich@gmail.com>
  */
 public class JSONClientInfo {
-       private String ip;
+    private String user;
+    private String ip;
     private String browserInfo;    
     private List<StreamProcessor> streams;
 
@@ -60,6 +61,16 @@ public class JSONClientInfo {
         
         
     }
+
+    public String getUser() {
+        return user;
+    }
+
+    public void setUser(String user) {
+        this.user = user;
+    }
+    
+    
 
     public String getIp() {
         return ip;

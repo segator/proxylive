@@ -33,6 +33,7 @@ import java.util.Objects;
  * @author Isaac Aymerich <isaac.aymerich@gmail.com>
  */
 public class ClientInfo {
+    private String clientUser;
     private String ip;
     private String browserInfo;
     private List<IStreamProcessor> streams;
@@ -53,6 +54,15 @@ public class ClientInfo {
         return browserInfo;
     }
 
+    public String getClientUser() {
+        return clientUser;
+    }
+
+    public void setClientUser(String clientUser) {
+        this.clientUser = clientUser;
+    }
+
+    
     public void setBrowserInfo(String browserInfo) {
         this.browserInfo = browserInfo;
     }
@@ -68,6 +78,7 @@ public class ClientInfo {
     @Override
     public int hashCode() {
         int hash = 5;
+        hash = 53 * hash + Objects.hashCode(this.clientUser);
         hash = 53 * hash + Objects.hashCode(this.ip);
         hash = 53 * hash + Objects.hashCode(this.browserInfo);
         return hash;
@@ -88,6 +99,9 @@ public class ClientInfo {
         if (!Objects.equals(this.browserInfo, other.browserInfo)) {
             return false;
         }
+        if (!Objects.equals(this.clientUser, other.clientUser)) {
+            return false;
+        }
         return true;
     }
 
@@ -99,7 +113,7 @@ public class ClientInfo {
         }
         streamToStr = streamToStr.substring(0,streamToStr.length()-1);
         streamToStr+="]";
-        return "{" + "ip=" + ip + ", browserInfo=" + browserInfo + ", streams=" + streamToStr + '}';
+        return "{user="+clientUser+", ip=" + ip + ", browserInfo=" + browserInfo + ", streams=" + streamToStr + '}';
     }
     
     

@@ -57,11 +57,12 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.util.UriComponentsBuilder;
 
 /**
  *
@@ -82,10 +83,9 @@ public class StreamController {
 
     @RequestMapping(value = "/view/{profile}/{channel}")
     public void dispatchStream(@PathVariable("profile") String profile, @PathVariable("channel") String channel,
-            HttpServletRequest request, HttpServletResponse response,
-            @RequestParam("user") String user, @RequestParam("pass") String pass) throws Exception {
-
-        if (!authService.loginUser(user, pass)) {
+            HttpServletRequest request, HttpServletResponse response) throws Exception {
+        MultiValueMap<String, String> parameters = UriComponentsBuilder.fromUriString(ProxyLiveUtils.getURL(request)).build().getQueryParams();
+        if (!authService.loginUser(parameters.getFirst("user"), parameters.getFirst("pass"))) {
             response.setStatus(404);
             return;
         }
@@ -174,18 +174,18 @@ public class StreamController {
 
     @RequestMapping(value = "channel/list/{format:^mpeg|hls$}/{profile}", method = RequestMethod.GET)
     public @ResponseBody
-    String generatePlaylist(HttpServletRequest request, HttpServletResponse response, @PathVariable("profile") String profile, @PathVariable("format") String format,
-            @RequestParam("user") String user, @RequestParam("pass") String pass) throws MalformedURLException, ProtocolException, IOException, ParseException, Exception {
-        if (!authService.loginUser(user, pass)) {
+    String generatePlaylist(HttpServletRequest request, HttpServletResponse response, @PathVariable("profile") String profile, @PathVariable("format") String format) throws MalformedURLException, ProtocolException, IOException, ParseException, Exception {
+        MultiValueMap<String, String> parameters = UriComponentsBuilder.fromUriString(ProxyLiveUtils.getURL(request)).build().getQueryParams();
+        if (!authService.loginUser(parameters.getFirst("user"), parameters.getFirst("pass"))) {
             response.setStatus(404);
             return "Invalid login";
         }
         StringBuffer buffer = new StringBuffer();
         String requestBaseURL = String.format("%s://%s:%s", request.getScheme(), request.getServerName(), request.getServerPort());
-        if(config.getEndpoint()!=null){
+        if (config.getEndpoint() != null) {
             requestBaseURL = config.getEndpoint();
         }
-        JSONArray channels = (JSONArray) getTvheadendResponse("api/channel/grid").get("entries");
+        JSONArray channels = (JSONArray) getTvheadendResponse("api/channel/grid?start=0&limit=5000").get("entries");
         List<String> userAllowedTags = getAllowedTags(null, null, null);
 
         buffer.append("#EXTM3U").append("\n");
@@ -196,10 +196,12 @@ public class StreamController {
                         append("\" tvg-name=\"").append(channel.get("name")).append("\" type=").append(format).append(",").
                         append(String.format("%s", channel.get("name"))).append("\n");
                 if (format.equals("mpeg")) {
-                    buffer.append(String.format("%s/view/%s/%s", requestBaseURL, profile, channel.get("uuid"))).append("?user=").append(user).append("&pass=").append(pass).append("\n");
+                    buffer.append(String.format("%s/view/%s/%s", requestBaseURL, profile, channel.get("uuid"))).append("?user=").append(parameters.getFirst("user")).append("&pass=").append(parameters.getFirst("pass")).append("\n");
                 } else if (format.equals("hls")) {
-                    buffer.append(String.format("%s/view/%s/%s", requestBaseURL, profile, channel.get("uuid"))).append("playlist.m3u8").append("?user=").append(user).append("&pass=").append(pass).append("\n");
+                    buffer.append(String.format("%s/view/%s/%s", requestBaseURL, profile, channel.get("uuid"))).append("playlist.m3u8").append("?user=").append(parameters.getFirst("user")).append("&pass=").append(parameters.getFirst("pass")).append("\n");
                 }
+            }else{
+                System.out.println("not enabled:"+channel);
             }
         }
         response.setHeader("Content-Disposition", "attachment; filename=playlist.m3u8");
@@ -246,10 +248,10 @@ public class StreamController {
 
     @RequestMapping(value = "/view/{profile}/{channel}/{file:^(?i)playlist.m3u8|playlist\\d*.ts$}", method = RequestMethod.GET)
     public void dispatchHLS(@PathVariable("profile") String profile, @PathVariable("channel") String channel,
-            @PathVariable String file, HttpServletRequest request, HttpServletResponse response,
-            @RequestParam("user") String user, @RequestParam("pass") String pass) throws Exception {
+            @PathVariable String file, HttpServletRequest request, HttpServletResponse response) throws Exception {
 
-        if (!authService.loginUser(user, pass)) {
+        MultiValueMap<String, String> parameters = UriComponentsBuilder.fromUriString(ProxyLiveUtils.getURL(request)).build().getQueryParams();
+        if (!authService.loginUser(parameters.getFirst("user"), parameters.getFirst("pass"))) {
             response.setStatus(404);
             return;
         }

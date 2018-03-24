@@ -141,6 +141,7 @@ public class WSController {
         List<JSONClientInfo> jsonClients = new ArrayList();
         for (ClientInfo client : clientInfoList) {
             JSONClientInfo jsonClient = new JSONClientInfo();
+            jsonClient.setUser(client.getClientUser());
             jsonClient.setIp(client.getIp());
             jsonClient.setBrowserInfo(client.getBrowserInfo());
             jsonClient.setStreams(new ArrayList());
