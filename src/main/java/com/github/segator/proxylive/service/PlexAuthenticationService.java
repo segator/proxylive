@@ -14,6 +14,8 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.ProtocolException;
 import java.net.URL;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
@@ -47,7 +49,7 @@ public class PlexAuthenticationService implements AuthenticationService {
         JSONObject userData = getUserData(user, password);
         String userID = (String) userData.get("id").toString();
         //Check the user is registered to our plex server and have channels enabled
-        URL url = new URL(String.format("https://%s:%s@plex.tv/api/users", plexAuthConfig.getAdminUser(), plexAuthConfig.getAdminPass()));
+        URL url = new URL(String.format("https://%s:%s@plex.tv/api/users", URLEncoder.encode(plexAuthConfig.getAdminUser(),"UTF-8"), URLEncoder.encode(plexAuthConfig.getAdminPass(),"UTF-8")));
         HttpURLConnection connection = createConnection(url);
         connection.connect();
         if (connection.getResponseCode() != 200) {
@@ -81,7 +83,7 @@ public class PlexAuthenticationService implements AuthenticationService {
     }
 
     private JSONObject getUserData(String user, String pass) throws MalformedURLException, IOException, ParseException {
-        URL url = new URL(String.format("https://%s:%s@plex.tv/users/sign_in.json", user, pass));
+        URL url = new URL(String.format("https://%s:%s@plex.tv/users/sign_in.json", URLEncoder.encode(user,"UTF-8"),  URLEncoder.encode(pass,"UTF-8")));
         HttpURLConnection connection = createConnection(url);
         connection.setRequestProperty("X-Plex-Client-Identifier", "proxylive");
         connection.setRequestMethod("POST");
@@ -106,7 +108,7 @@ public class PlexAuthenticationService implements AuthenticationService {
 
         connection.setReadTimeout(10000);
         if (url.getUserInfo() != null) {
-            String basicAuth = "Basic " + new String(Base64.getEncoder().encode(url.getUserInfo().getBytes()));
+            String basicAuth = "Basic " + new String(Base64.getEncoder().encode(URLDecoder.decode(url.getUserInfo(),"UTF-8").getBytes()));
             connection.setRequestProperty("Authorization", basicAuth);
         }
         connection.setRequestMethod("GET");
