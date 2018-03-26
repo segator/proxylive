@@ -72,7 +72,7 @@ public class PlexAuthenticationService implements AuthenticationService {
             }
         }
 
-        return true;
+        return false;
     }
 
     @Override
