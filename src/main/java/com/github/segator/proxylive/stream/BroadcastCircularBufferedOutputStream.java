@@ -38,11 +38,10 @@ public class BroadcastCircularBufferedOutputStream extends OutputStream {
     private final ByteBuffer byteBuffer;
     private boolean filled;
     private final List<ClientBroadcastedInputStream> clientsList;
-    private final String identifier;
+    
 
-    public BroadcastCircularBufferedOutputStream(int size, String identifier) {
+    public BroadcastCircularBufferedOutputStream(int size) {
         filled = false;
-        this.identifier = identifier;
         clientsList = new ArrayList();
         byteBuffer = ByteBuffer.allocateDirect(size);
 

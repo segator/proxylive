@@ -45,22 +45,20 @@ public class StreamProcessorFactory {
     @Bean
     @Scope(value = "prototype")
     public IStreamProcessor StreamProcessor(int mode, String clientIdentifier, String channel, String profile) {
-        String identifier = new Date().getTime() + clientIdentifier;
-        String identifier64 = new String(Base64.getEncoder().encode(identifier.getBytes()));
 
-        HttpSoureStreamProcessor sourceStreamProcessor = (HttpSoureStreamProcessor) context.getBean("HttpSoureStreamProcessor", identifier64, channel);
+        HttpSoureStreamProcessor sourceStreamProcessor = (HttpSoureStreamProcessor) context.getBean("HttpSoureStreamProcessor", clientIdentifier, channel);
 
         IStreamProcessor streamProcessor = null;
         if (profile==null || profile.equals("raw")) {
             streamProcessor = sourceStreamProcessor;
         } else {
             //streamProcessor = (IStreamProcessor) context.getBean("TranscodedStreamProcessor", identifier64, sourceStreamProcessor, profile);
-            streamProcessor = (IStreamProcessor) context.getBean("DirectTranscodedStreamProcessor", identifier64, channel, profile);
+            streamProcessor = (IStreamProcessor) context.getBean("DirectTranscodedStreamProcessor", clientIdentifier, channel, profile);
         }
         IStreamProcessor postStreamProcessor = null;
         switch (mode) {
             case ProxyLiveConstants.HLS_MODE:
-                postStreamProcessor = (IStreamProcessor) context.getBean("HLSStreamProcessor", identifier64, streamProcessor);
+                postStreamProcessor = (IStreamProcessor) context.getBean("HLSStreamProcessor", clientIdentifier, streamProcessor);
                 break;
             case ProxyLiveConstants.STREAM_MODE:
                 postStreamProcessor = streamProcessor;

@@ -43,6 +43,7 @@ import java.net.MalformedURLException;
 import java.net.ProtocolException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.rmi.RemoteException;
 import java.util.Base64;
 import java.util.Date;
 import java.util.List;
@@ -81,6 +82,10 @@ public class StreamController {
     @Autowired
     private StreamProcessorsSession streamProcessorsSession;
 
+    private long lastChannelListUpdated = 0;
+    private JSONArray cachedChannelList;
+    private JSONArray cachedChannelTags;
+
     @RequestMapping(value = "/view/{profile}/{channel}")
     public void dispatchStream(@PathVariable("profile") String profile, @PathVariable("channel") String channel,
             HttpServletRequest request, HttpServletResponse response) throws Exception {
@@ -89,11 +94,16 @@ public class StreamController {
             response.setStatus(404);
             return;
         }
+        JSONObject channelInfo = getChannelData(channel);
+        if(!isChannelAllowed(getAllowedTags(null, null, null), channelInfo)){
+            response.setStatus(401);
+            return;
+        }
 
-        String clientIdentifier = ProxyLiveUtils.getRequestIP(request) + ProxyLiveUtils.getBrowserInfo(request);
-        IStreamMultiplexerProcessor iStreamProcessor = (IStreamMultiplexerProcessor) context.getBean("StreamProcessor", ProxyLiveConstants.STREAM_MODE, clientIdentifier, channel, profile);
+        IStreamMultiplexerProcessor iStreamProcessor = (IStreamMultiplexerProcessor) context.getBean("StreamProcessor", ProxyLiveConstants.STREAM_MODE, channelInfo.get("name"), channel, profile);
         ClientInfo client = streamProcessorsSession.manage(iStreamProcessor, request);
-
+        
+        
         System.out.println("require connection from : " + client);
         iStreamProcessor.start();
         if (iStreamProcessor.isConnected()) {
@@ -185,7 +195,8 @@ public class StreamController {
         if (config.getEndpoint() != null) {
             requestBaseURL = config.getEndpoint();
         }
-        JSONArray channels = (JSONArray) getTvheadendResponse("api/channel/grid?start=0&limit=5000").get("entries");
+        JSONArray channels = getTvheadendChannels();
+
         List<String> userAllowedTags = getAllowedTags(null, null, null);
 
         buffer.append("#EXTM3U").append("\n");
@@ -200,8 +211,8 @@ public class StreamController {
                 } else if (format.equals("hls")) {
                     buffer.append(String.format("%s/view/%s/%s", requestBaseURL, profile, channel.get("uuid"))).append("playlist.m3u8").append("?user=").append(parameters.getFirst("user")).append("&pass=").append(parameters.getFirst("pass")).append("\n");
                 }
-            }else{
-                System.out.println("not enabled:"+channel);
+            } else {
+                System.out.println("not enabled:" + channel);
             }
         }
         response.setHeader("Content-Disposition", "attachment; filename=playlist.m3u8");
@@ -213,7 +224,7 @@ public class StreamController {
     }
 
     private List<String> getAllowedTags(String user, String pass, List<String> groups) throws ProtocolException, IOException, MalformedURLException, ParseException {
-        JSONArray tags = (JSONArray) getTvheadendResponse("api/channeltag/list").get("entries");
+        JSONArray tags = getTvheadendTags();
         List<String> validsTags = newArrayList();
         for (Object otag : tags) {
             JSONObject tag = (JSONObject) otag;
@@ -246,7 +257,7 @@ public class StreamController {
 
     }
 
-    @RequestMapping(value = "/view/{profile}/{channel}/{file:^(?i)playlist.m3u8|playlist\\d*.ts$}", method = RequestMethod.GET)
+    /*@RequestMapping(value = "/view/{profile}/{channel}/{file:^(?i)playlist.m3u8|playlist\\d*.ts$}", method = RequestMethod.GET)
     public void dispatchHLS(@PathVariable("profile") String profile, @PathVariable("channel") String channel,
             @PathVariable String file, HttpServletRequest request, HttpServletResponse response) throws Exception {
 
@@ -294,8 +305,7 @@ public class StreamController {
         } else {
             response.setStatus(404);
         }
-    }
-
+    }*/
     private MediaType getMediaType(String downloadFile) {
         String name = downloadFile;
         try {
@@ -347,5 +357,32 @@ public class StreamController {
         respHeaders.setHeader(HttpHeaders.CONTENT_LENGTH, fileSize.toString());
         respHeaders.setHeader(HttpHeaders.CONTENT_TYPE, getMediaType(file).toString());
         return downloadFile;
+    }
+
+    private JSONArray getTvheadendChannels() throws ProtocolException, IOException, MalformedURLException, ParseException {
+        getTvheadendData();
+        return cachedChannelList;
+    }
+    
+     private JSONArray getTvheadendTags()  throws ProtocolException, IOException, MalformedURLException, ParseException{
+         getTvheadendData();
+         return cachedChannelTags;
+     }
+    private void getTvheadendData() throws ProtocolException, IOException, MalformedURLException, ParseException{
+        if (lastChannelListUpdated + (config.getSource().getChannelListCacheTime() * 1000) < new Date().getTime()) {
+            cachedChannelList = (JSONArray) getTvheadendResponse("api/channel/grid?start=0&limit=5000").get("entries");
+            cachedChannelTags = (JSONArray) getTvheadendResponse("api/channeltag/list").get("entries");
+            lastChannelListUpdated =  new Date().getTime();
+        }
+    }
+
+    private JSONObject getChannelData(String channel) throws Exception {
+        for (Object ochannel : getTvheadendChannels()) {
+            JSONObject channelObject = (JSONObject) ochannel;
+            if (channelObject.get("uuid").equals(channel)) {
+                return channelObject;
+            }
+        }
+        throw new RemoteException("channel no exist");
     }
 }

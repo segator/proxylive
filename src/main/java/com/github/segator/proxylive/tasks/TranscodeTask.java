@@ -70,7 +70,7 @@ public class TranscodeTask implements IMultiplexerStreamer {
 
     @PostConstruct
     public void initializeBean() {
-        multiplexerOutputStream = new BroadcastCircularBufferedOutputStream(config.getBuffers().getBroadcastBufferSize(), "trans");
+        multiplexerOutputStream = new BroadcastCircularBufferedOutputStream(config.getBuffers().getBroadcastBufferSize());
         sourceProcessorInputStream = new WithoutBlockingInputStream(inputStreamProcessor.getMultiplexedInputStream());
 
     }

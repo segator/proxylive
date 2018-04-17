@@ -31,6 +31,7 @@ public class HttpLiveSource {
 
     private String tvheadendurl;
     private int reconnectTimeout;
+    private int channelListCacheTime=600;
 
 
     public String getTvheadendurl() {
@@ -48,6 +49,12 @@ public class HttpLiveSource {
     public void setReconnectTimeout(int reconnectTimeout) {
         this.reconnectTimeout = reconnectTimeout;
     }
-    
 
+    public int getChannelListCacheTime() {
+        return channelListCacheTime;
+    }
+
+    public void setChannelListCacheTime(int channelListCacheTime) {
+        this.channelListCacheTime = channelListCacheTime;
+    }
 }

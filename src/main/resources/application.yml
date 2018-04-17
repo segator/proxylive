@@ -1,3 +1,4 @@
+spring.jackson.serialization.INDENT_OUTPUT: true
 source:
     tvheadendurl: http://user:pass@tvheadend:9981/
     reconnectTimeout: 10
