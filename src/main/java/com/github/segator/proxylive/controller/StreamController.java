@@ -47,6 +47,7 @@ import java.rmi.RemoteException;
 import java.util.Base64;
 import java.util.Date;
 import java.util.List;
+import org.apache.commons.io.IOUtils;
 import static org.hibernate.validator.internal.util.CollectionHelper.newArrayList;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -91,19 +92,18 @@ public class StreamController {
             HttpServletRequest request, HttpServletResponse response) throws Exception {
         MultiValueMap<String, String> parameters = UriComponentsBuilder.fromUriString(ProxyLiveUtils.getURL(request)).build().getQueryParams();
         if (!authService.loginUser(parameters.getFirst("user"), parameters.getFirst("pass"))) {
-            response.setStatus(404);
+            response.setStatus(HttpStatus.NOT_FOUND.value());
             return;
         }
         JSONObject channelInfo = getChannelData(channel);
-        if(!isChannelAllowed(getAllowedTags(null, null, null), channelInfo)){
-            response.setStatus(401);
+        if (!isChannelAllowed(getAllowedTags(null, null, null), channelInfo)) {
+            response.setStatus(HttpStatus.UNAUTHORIZED.value());
             return;
         }
 
         IStreamMultiplexerProcessor iStreamProcessor = (IStreamMultiplexerProcessor) context.getBean("StreamProcessor", ProxyLiveConstants.STREAM_MODE, channelInfo.get("name"), channel, profile);
         ClientInfo client = streamProcessorsSession.manage(iStreamProcessor, request);
-        
-        
+
         System.out.println("require connection from : " + client);
         iStreamProcessor.start();
         if (iStreamProcessor.isConnected()) {
@@ -158,7 +158,7 @@ public class StreamController {
             response.setStatus(connection.getResponseCode());
             return;
         }
-        response.setStatus(200);
+        response.setStatus(HttpStatus.OK.value());
         InputStream iconStream = connection.getInputStream();
         //response.setHeader(file, file);
         byte[] buffer = new byte[1024];
@@ -179,7 +179,23 @@ public class StreamController {
                 iconStream.close();
             } catch (Exception ex2) {
             }
+            connection.disconnect();
         }
+    }
+
+    @RequestMapping(value = "epg", method = RequestMethod.GET)
+    public void readEPG(HttpServletResponse response) throws IOException {
+        HttpURLConnection connection = getURLConnection("xmltv/channels");
+        if (connection.getResponseCode() != 200) {
+            response.setStatus(connection.getResponseCode());
+            return;
+        }
+        response.setHeader("Content-Disposition", "attachment; filename=xmltv.xml");
+        response.setStatus(HttpStatus.OK.value());
+        IOUtils.copy(connection.getInputStream(), response.getOutputStream());
+        response.getOutputStream().close();
+        connection.getInputStream().close();
+        connection.disconnect();
     }
 
     @RequestMapping(value = "channel/list/{format:^mpeg|hls$}/{profile}", method = RequestMethod.GET)
@@ -187,9 +203,12 @@ public class StreamController {
     String generatePlaylist(HttpServletRequest request, HttpServletResponse response, @PathVariable("profile") String profile, @PathVariable("format") String format) throws MalformedURLException, ProtocolException, IOException, ParseException, Exception {
         MultiValueMap<String, String> parameters = UriComponentsBuilder.fromUriString(ProxyLiveUtils.getURL(request)).build().getQueryParams();
         if (!authService.loginUser(parameters.getFirst("user"), parameters.getFirst("pass"))) {
-            response.setStatus(404);
+            response.setStatus(HttpStatus.NOT_FOUND.value());
             return "Invalid login";
         }
+        response.setHeader("Content-Disposition", "attachment; filename=playlist.m3u");
+        response.setHeader("Access-Control-Allow-Origin", "*");
+        response.setStatus(HttpStatus.OK.value());
         StringBuffer buffer = new StringBuffer();
         String requestBaseURL = String.format("%s://%s:%s", request.getScheme(), request.getServerName(), request.getServerPort());
         if (config.getEndpoint() != null) {
@@ -199,23 +218,23 @@ public class StreamController {
 
         List<String> userAllowedTags = getAllowedTags(null, null, null);
 
-        buffer.append("#EXTM3U").append("\n");
+        buffer.append("#EXTM3U").append(" cache=2000 url-tvg=\"").append(String.format("%s/epg", requestBaseURL)).append("\"").
+                append("x-tvg-url=\"").append(String.format("%s/epg", requestBaseURL)).append("\" tvg-shift=0\r\n\r\n");
         for (Object ochannel : channels) {
             JSONObject channel = (JSONObject) ochannel;
             if (isChannelAllowed(userAllowedTags, channel)) {
                 buffer.append("#EXTINF:-1 tvg-logo=\"").append(String.format("%s/icon/%s", requestBaseURL, channel.get("icon_public_url").toString().split("/")[1])).
                         append("\" tvg-name=\"").append(channel.get("name")).append("\" type=").append(format).append(",").
-                        append(String.format("%s", channel.get("name"))).append("\n");
+                        append(String.format("%s", channel.get("name"))).append("\r\n");
                 if (format.equals("mpeg")) {
-                    buffer.append(String.format("%s/view/%s/%s", requestBaseURL, profile, channel.get("uuid"))).append("?user=").append(parameters.getFirst("user")).append("&pass=").append(parameters.getFirst("pass")).append("\n");
+                    buffer.append(String.format("%s/view/%s/%s", requestBaseURL, profile, channel.get("uuid"))).append("?user=").append(parameters.getFirst("user")).append("&pass=").append(parameters.getFirst("pass")).append("\r\n");
                 } else if (format.equals("hls")) {
-                    buffer.append(String.format("%s/view/%s/%s", requestBaseURL, profile, channel.get("uuid"))).append("playlist.m3u8").append("?user=").append(parameters.getFirst("user")).append("&pass=").append(parameters.getFirst("pass")).append("\n");
+                    buffer.append(String.format("%s/view/%s/%s", requestBaseURL, profile, channel.get("uuid"))).append("playlist.m3u8").append("?user=").append(parameters.getFirst("user")).append("&pass=").append(parameters.getFirst("pass")).append("\r\n");
                 }
             } else {
                 System.out.println("not enabled:" + channel);
             }
         }
-        response.setHeader("Content-Disposition", "attachment; filename=playlist.m3u8");
         return buffer.toString();
     }
 
@@ -253,7 +272,9 @@ public class StreamController {
         if (connection.getResponseCode() != 200) {
             throw new IOException("Error on open stream:" + request);
         }
-        return (JSONObject) jsonParser.parse(new InputStreamReader(connection.getInputStream(), "UTF-8"));
+        JSONObject returnObject = (JSONObject) jsonParser.parse(new InputStreamReader(connection.getInputStream(), "UTF-8"));
+        connection.disconnect();
+        return returnObject;
 
     }
 
@@ -363,16 +384,17 @@ public class StreamController {
         getTvheadendData();
         return cachedChannelList;
     }
-    
-     private JSONArray getTvheadendTags()  throws ProtocolException, IOException, MalformedURLException, ParseException{
-         getTvheadendData();
-         return cachedChannelTags;
-     }
-    private void getTvheadendData() throws ProtocolException, IOException, MalformedURLException, ParseException{
+
+    private JSONArray getTvheadendTags() throws ProtocolException, IOException, MalformedURLException, ParseException {
+        getTvheadendData();
+        return cachedChannelTags;
+    }
+
+    private void getTvheadendData() throws ProtocolException, IOException, MalformedURLException, ParseException {
         if (lastChannelListUpdated + (config.getSource().getChannelListCacheTime() * 1000) < new Date().getTime()) {
             cachedChannelList = (JSONArray) getTvheadendResponse("api/channel/grid?start=0&limit=5000").get("entries");
             cachedChannelTags = (JSONArray) getTvheadendResponse("api/channeltag/list").get("entries");
-            lastChannelListUpdated =  new Date().getTime();
+            lastChannelListUpdated = new Date().getTime();
         }
     }
 
