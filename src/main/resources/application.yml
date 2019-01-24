@@ -2,32 +2,35 @@ spring.jackson.serialization.INDENT_OUTPUT: true
 source:
     tvheadendurl: http://user:pass@tvheadend:9981/
     reconnectTimeout: 10
+streamTimeout: 60
+
 ffmpeg:
     path: ffmpeg
     profiles:
         -
             alias: "aac"
-            parameters: "-c:a:0 aac -b:a 320k -c:v copy -threads 0 -f mpegts"
+            parameters: "-sn -c:a:0 aac -b:a 320k -c:v copy"
         -
             alias: "raw"
-            parameters: "-c:a copy -c:v copy -threads 0 -f mpegts"
+            parameters: "-c:a copy -c:v copy"
         -
             alias: "360p"
-            parameters: "-c:a:0 libfdk_aac -b:a 128k -c:v libx264 -tune zerolatency -g 10 -vprofile high -level 3.0 -crf 18 -movflags +faststart -bufsize 15000k -maxrate 700k  -preset fast -vf scale=-1:360,yadif=0 -threads 0 -f mpegts"
+            parameters: "-sn -c:a:0 aac -b:a 128k -c:v libx264 -tune zerolatency -g 10 -vprofile high -level 3.0 -crf 18 -movflags +faststart -bufsize 15000k -maxrate 700k  -preset veryfast -vf scale=-1:360,yadif=0"
         -
             alias: "480p"
-            parameters: "-c:a:0 libfdk_aac -b:a 196k -c:v libx264 -tune zerolatency -g 10 -vprofile high -level 3.0 -crf 18 -movflags +faststart -bufsize 15000k -maxrate 1500k  -preset fast -vf scale=-1:480,yadif=0 -threads 0 -f mpegts"
+            parameters: "-sn -c:a:0 aac -b:a 196k -c:v libx264 -tune zerolatency -g 10 -vprofile high -level 3.0 -crf 18 -movflags +faststart -bufsize 15000k -maxrate 1500k  -preset veryfast -vf scale=-1:480,yadif=0"
         -
             alias: "720p"
-            parameters: "-c:a:0 libfdk_aac -b:a 320k -c:v libx264 -tune zerolatency -g 10 -vprofile high -level 4.0 -crf 18 -movflags +faststart -bufsize 15000k -maxrate 3000k  -preset fast -vf scale=-1:720,yadif=0 -threads 0 -f mpegts"
+            parameters: "-sn  -c:a:0 aac -b:a 320k -c:v libx264 -tune zerolatency -g 10 -vprofile high -level 4.0 -crf 18 -movflags +faststart -bufsize 15000k -maxrate 3000k  -preset veryfast -vf scale=-1:720,yadif=0"
         -
             alias: "1080p"
-            parameters:  "-c:a:0 libfdk_aac -b:a 320k -c:v libx264 -tune zerolatency -g 300 -vprofile high -level 4.0 -movflags +faststart -bufsize 15000k -maxrate 5000k  -preset fast -vf yadif=0 -threads 0 -f mpegts"
-    
+            parameters:  "-sn  -c:a:0 aac -b:a 320k -c:v libx264 -tune zerolatency -g 300 -vprofile high -level 4.0 -movflags +faststart -bufsize 15000k -maxrate 5000k  -preset veryfast -vf yadif=0"
+    mpegTS:
+        parameters: "-threads 0 -f mpegts -mpegts_m2ts_mode 1 -mpegts_copyts 1 -mpegts_flags +resend_headers  "
     hls:
         tempPath: "/tmp"
-        parameters: "-vcodec copy -acodec copy   -flags -global_header  -avoid_negative_ts disabled -map_metadata -1 -start_at_zero -copyts -flags -global_header -vsync cfr -y -nostats -f hls -hls_time 1 -hls_list_size 20 -hls_wrap 30"
-        timeout: 120
+        parameters: "-flags -global_header  -avoid_negative_ts disabled -map_metadata -1 -start_at_zero -copyts -flags -global_header -vsync cfr -y -nostats -f hls  -hls_time 2 -hls_list_size 10 -hls_wrap 20 -hls_allow_cache 0  -hls_flags +append_list -hls_flags +discont_start -hls_flags +delete_segments"
+        timeout: 30
 
 buffers:
     chunkSize: 131072

@@ -25,6 +25,7 @@ package com.github.segator.proxylive.tasks;
 
 import com.github.segator.proxylive.ProxyLiveUtils;
 import com.github.segator.proxylive.entity.ClientInfo;
+import com.github.segator.proxylive.processor.DirectHLSTranscoderStreamProcessor;
 import com.github.segator.proxylive.processor.HLSStreamProcessor;
 import com.github.segator.proxylive.processor.IStreamProcessor;
 import java.util.ArrayList;
@@ -89,12 +90,13 @@ public class StreamProcessorsSession {
         }
     }
 
-    public synchronized HLSStreamProcessor getHLSStream(String clientIdentifier, String channel, String profile) {
+    public synchronized DirectHLSTranscoderStreamProcessor getHLSStream(String clientIdentifier, String channel, String profile) {
         for (ClientInfo clientInfo : clientInfoList) {
             if (clientIdentifier.equals(clientInfo.getIp())) {
                 for (IStreamProcessor streamProcessor : clientInfo.getStreams()) {
-                    if (streamProcessor.getTask().getIdentifier().equals(channel + "_" + profile + "_HLS")) {
-                        return (HLSStreamProcessor) streamProcessor;
+                    profile=profile.equals("raw")?"":"_" +profile;
+                    if (streamProcessor.getTask().getIdentifier().equals(channel +  profile + "_HLS")) {
+                        return (DirectHLSTranscoderStreamProcessor) streamProcessor;
                     }
                 }
             }

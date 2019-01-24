@@ -33,6 +33,7 @@ public class FFMpegConfiguration {
     private List<FFMpegProfile> profiles;
     private String path;
     private HLSConfiguration hls;
+    private MPEGTSConfiguration mpegTS;
 
     public HLSConfiguration getHls() {
         return hls;
@@ -59,5 +60,12 @@ public class FFMpegConfiguration {
     public void setProfiles(List<FFMpegProfile> profiles) {
         this.profiles = profiles;
     }
-    
+
+    public MPEGTSConfiguration getMpegTS() {
+        return mpegTS;
+    }
+
+    public void setMpegTS(MPEGTSConfiguration mpegTS) {
+        this.mpegTS = mpegTS;
+    }
 }

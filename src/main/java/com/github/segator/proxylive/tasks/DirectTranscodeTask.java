@@ -81,10 +81,12 @@ public class DirectTranscodeTask implements IMultiplexerStreamer {
             runDate = new Date();
             transcodeParameters = ffmpegProfilerService.getTranscodeParameters(profile);
             String ffmpegExecutable = ffmpegProfilerService.getFFMpegExecutable();
+            String ffmpegMpegTSParameters = config.getFfmpeg().getMpegTS().getParameters();
+
             if (isTerminated()) {
                 return;
             }
-            process = Runtime.getRuntime().exec(ffmpegExecutable + " -i " + url + " " + transcodeParameters + " -f mpegts -");
+            process = Runtime.getRuntime().exec(ffmpegExecutable + " -i " + url + " " + transcodeParameters + " " + ffmpegMpegTSParameters+" -");
 
             errorReaderThread = new Thread("Transcoding Error Reader Thread:" + getIdentifier()) {
                 public void run() {
@@ -196,8 +198,12 @@ public class DirectTranscodeTask implements IMultiplexerStreamer {
         return multiplexerOutputStream;
     }
 
-    public synchronized boolean isRunning() {
-        return process.isAlive();
+    public synchronized boolean isRunning() throws IOException {
+        if(process.isAlive()){
+            return true;
+        }else{
+            throw new IOException("Process is not running");
+        }
     }
 
     public boolean isTerminated() {

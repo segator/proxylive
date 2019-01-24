@@ -68,7 +68,6 @@ public class ClientBroadcastedInputStream extends InputStream {
             }
         }
         readed = clientByteBuffer.get();
-        clientByteBuffer.position();
         if (clientByteBuffer.position() == sourceByteBuffer.limit()) {
             System.out.println("jump" + id);
             clientByteBuffer.rewind();
@@ -89,11 +88,13 @@ public class ClientBroadcastedInputStream extends InputStream {
             } else {
                 clientByteBuffer.get(b, 0, readed);
             }
-
+        } else if(clientByteBuffer.position() == sourceByteBuffer.position()){
+            return 0;
         } else if (clientByteBuffer.position() <= sourcePosition) {
-            try {
+           /** try {
                 long waitTime = 0;
                 while (clientByteBuffer.position() == sourceByteBuffer.position()) {
+
                     Thread.sleep(10);
                     waitTime+=10;
                     if(waitTime>15000){
@@ -103,7 +104,7 @@ public class ClientBroadcastedInputStream extends InputStream {
             } catch (InterruptedException ex) {
                 throw new IOException("Interrupted waiting");
             }
-            sourcePosition = sourceByteBuffer.position();
+            sourcePosition = sourceByteBuffer.position();**/
             //Write buffer rewinded
             if (sourcePosition < clientByteBuffer.position()) {
                 readed = read(b);

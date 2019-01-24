@@ -41,6 +41,7 @@ public class ProxyLiveConfiguration {
     private HttpLiveSource source;
     private AuthenticationConfiguration authentication;
     private String endpoint;
+    private int streamTimeout;
 
     public FFMpegConfiguration getFfmpeg() {
         return ffmpeg;
@@ -80,5 +81,16 @@ public class ProxyLiveConfiguration {
 
     public void setEndpoint(String endpoint) {
         this.endpoint = endpoint;
+    }
+
+    public int getStreamTimeout() {
+        return streamTimeout;
+    }
+    public int getStreamTimeoutMilis() {
+        return streamTimeout*1000;
+    }
+
+    public void setStreamTimeout(int streamTimeout) {
+        this.streamTimeout = streamTimeout;
     }
 }

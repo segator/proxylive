@@ -25,10 +25,8 @@ package com.github.segator.proxylive.tasks;
 
 import com.github.segator.proxylive.entity.ClientInfo;
 import com.github.segator.proxylive.processor.IStreamProcessor;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
+
+import java.util.*;
 import java.util.Map.Entry;
 import com.github.segator.proxylive.config.ProxyLiveConfiguration;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,6 +51,9 @@ public class ProcessorTasks {
     private StreamProcessorsSession streamProcessorsSession;
     @Autowired
     private ProxyLiveConfiguration config;
+
+    @Autowired
+    private ProcessorTasks tasks;
 
     public ProcessorTasks() {
         httpSourceStreamTasks = new HashMap();
@@ -108,6 +109,8 @@ public class ProcessorTasks {
             return directTranscodeTasks;
         } else if (clazz.equals(HLSTask.class)) {
             return HLSTasks;
+        } else if (clazz.equals(HLSDirectTask.class)) {
+            return HLSDirectTasks;
         }
         return null;
     }
@@ -126,12 +129,34 @@ public class ProcessorTasks {
         return getOperationMap(task.getClass());
     }
 
+    /*@Scheduled(fixedDelay = 5*1000)//Every 30 seconds
+    public void killNotLinkedTasks(){
+        //Kill tasks that doens't have any consumer asigned
+        Map nonHLSTasks = new HashMap(directTranscodeTasks);
+        Collection onlyTasks = nonHLSTasks.values();
+        nonHLSTasks.putAll(httpSourceStreamTasks);
+        for (ClientInfo client : new ArrayList<>(streamProcessorsSession.getClientInfoList())) {
+            for (IStreamProcessor streamProcessor : new ArrayList<>(client.getStreams())) {
+                IStreamTask streamBindedTask = streamProcessor.getTask();
+                if (!onlyTasks.contains(streamBindedTask)) {
+                    try {
+                        tasks.killTask(streamBindedTask);
+                    } catch (Exception ex) {
+                    }
+                }
+            }
+        }
+    }*/
+
+
     @Scheduled(fixedDelay = 5 * 1000)//Every 5 seconds
     public void killHLSStreams() {
         long now = new Date().getTime();
-        Map<Thread, IStreamTask> HLSTasksFore = new HashMap(HLSTasks);
+        Map<Thread, IStreamTask> HLSTasksFore = new HashMap(HLSDirectTasks);
+
+
         for (Entry<Thread, IStreamTask> entry : HLSTasksFore.entrySet()) {
-            HLSTask hlsTask = (HLSTask) entry.getValue();
+            HLSDirectTask hlsTask = (HLSDirectTask) entry.getValue();
             if (hlsTask.getLastAccess() != null) {
                 long difference = (now - hlsTask.getLastAccess()) / 1000;
                 if (difference > config.getFfmpeg().getHls().getTimeout()) {

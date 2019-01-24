@@ -113,6 +113,7 @@ public class WebInputStream extends InputStream {
     private synchronized boolean reconnect() throws IOException {
         int secondsFromLastConnect = (int) ((new Date().getTime() - lastConnection) / 1000);
         if (secondsFromLastConnect > minSecondsBetweenReconnects) {
+            System.out.println("Reconnecting " + url.toString());
             try {
                 httpInputStream.close();
             } catch (Exception ex) {

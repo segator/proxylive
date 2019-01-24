@@ -31,6 +31,7 @@ public class HLSConfiguration {
 
     private String tempPath;
     private String parameters;
+    private String directParameters;
     private Integer timeout;
 
     public String getTempPath() {
@@ -56,6 +57,12 @@ public class HLSConfiguration {
     public void setTimeout(Integer timeout) {
         this.timeout = timeout;
     }
-    
-    
+
+    public String getDirectParameters() {
+        return directParameters;
+    }
+
+    public void setDirectParameters(String directParameters) {
+        this.directParameters = directParameters;
+    }
 }

@@ -26,18 +26,19 @@ package com.github.segator.proxylive.controller;
 import com.github.segator.proxylive.ProxyLiveConstants;
 import com.github.segator.proxylive.ProxyLiveUtils;
 import com.github.segator.proxylive.entity.ClientInfo;
+import com.github.segator.proxylive.processor.DirectHLSTranscoderStreamProcessor;
 import com.github.segator.proxylive.processor.IStreamMultiplexerProcessor;
 import com.github.segator.proxylive.tasks.StreamProcessorsSession;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+
+import java.io.*;
+import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import com.github.segator.proxylive.config.ProxyLiveConfiguration;
 import com.github.segator.proxylive.processor.HLSStreamProcessor;
 import com.github.segator.proxylive.processor.IHLSStreamProcessor;
 import com.github.segator.proxylive.service.AuthenticationService;
-import java.io.InputStreamReader;
+
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.ProtocolException;
@@ -87,9 +88,10 @@ public class StreamController {
     private JSONArray cachedChannelList;
     private JSONArray cachedChannelTags;
 
-    @RequestMapping(value = "/view/{profile}/{channel}")
+    @RequestMapping(value = "/view/{profile}/{channel}",method=RequestMethod.GET)
     public void dispatchStream(@PathVariable("profile") String profile, @PathVariable("channel") String channel,
             HttpServletRequest request, HttpServletResponse response) throws Exception {
+        System.out.println("received connection controller");
         MultiValueMap<String, String> parameters = UriComponentsBuilder.fromUriString(ProxyLiveUtils.getURL(request)).build().getQueryParams();
         if (!authService.loginUser(parameters.getFirst("user"), parameters.getFirst("pass"))) {
             response.setStatus(HttpStatus.NOT_FOUND.value());
@@ -111,25 +113,32 @@ public class StreamController {
             response.setHeader("Content-Type", "video/mpeg");
             response.setStatus(HttpStatus.OK.value());
             OutputStream clientStream = response.getOutputStream();
-            InputStream multiplexedInputStream = iStreamProcessor.getMultiplexedInputStream();
-            byte[] buffer = new byte[config.getBuffers().getChunkSize()];
-            int len;
-            try {
-                while (true) {
-                    len = multiplexedInputStream.read(buffer);
-                    if (len > 0) {
-                        clientStream.write(buffer, 0, len);
-                    } else {
-                        Thread.sleep(1);
+            if(!clientStream.getClass().getName().equals("javax.servlet.http.NoBodyOutputStream")) {
+                InputStream multiplexedInputStream = iStreamProcessor.getMultiplexedInputStream();
+                byte[] buffer = new byte[config.getBuffers().getChunkSize()];
+                int len;
+                try {
+                    long lastReaded  = new Date().getTime();
+                    while (true) {
+                        len = multiplexedInputStream.read(buffer);
+                        if (len > 0) {
+                            lastReaded = new Date().getTime();
+                            clientStream.write(buffer, 0, len);
+                        } else {
+                            if(lastReaded - new Date().getTime() > config.getStreamTimeoutMilis()) {
+                                throw new IOException("Disconnected" + client + " because timeout on " + iStreamProcessor);
+                            }else {
+                                Thread.sleep(1);
+                            }
+                        }
+                    }
+                } catch (Exception ex) {
+                    try {
+                        clientStream.close();
+                    } catch (Exception ex2) {
                     }
                 }
-            } catch (Exception ex) {
-                try {
-                    clientStream.close();
-                } catch (Exception ex2) {
-                }
             }
-
             iStreamProcessor.stop(false);
             streamProcessorsSession.removeClientInfo(client, iStreamProcessor);
 
@@ -229,7 +238,7 @@ public class StreamController {
                 if (format.equals("mpeg")) {
                     buffer.append(String.format("%s/view/%s/%s", requestBaseURL, profile, channel.get("uuid"))).append("?user=").append(parameters.getFirst("user")).append("&pass=").append(parameters.getFirst("pass")).append("\r\n");
                 } else if (format.equals("hls")) {
-                    buffer.append(String.format("%s/view/%s/%s", requestBaseURL, profile, channel.get("uuid"))).append("playlist.m3u8").append("?user=").append(parameters.getFirst("user")).append("&pass=").append(parameters.getFirst("pass")).append("\r\n");
+                    buffer.append(String.format("%s/view/%s/%s", requestBaseURL, profile, channel.get("uuid"))).append("/playlist.m3u8").append("?user=").append(parameters.getFirst("user")).append("&pass=").append(parameters.getFirst("pass")).append("\r\n");
                 }
             } else {
                 System.out.println("not enabled:" + channel);
@@ -278,26 +287,39 @@ public class StreamController {
 
     }
 
-    /*@RequestMapping(value = "/view/{profile}/{channel}/{file:^(?i)playlist.m3u8|playlist\\d*.ts$}", method = RequestMethod.GET)
+    @RequestMapping(value = "/view/{profile}/{channel}/{file:^(?i)playlist.m3u8|dummy\\d*.ts|playlist\\d*.ts$}", method = RequestMethod.HEAD)
+    public void hola(HttpServletRequest request){
+        System.out.println(UriComponentsBuilder.fromUriString(ProxyLiveUtils.getURL(request)).build().getQuery());
+    }
+    @RequestMapping(value = "/view/{profile}/{channel}/{file:^(?i)playlist.m3u8|dummy\\d*.ts|playlist\\d*.ts$}", method = RequestMethod.GET)
     public void dispatchHLS(@PathVariable("profile") String profile, @PathVariable("channel") String channel,
             @PathVariable String file, HttpServletRequest request, HttpServletResponse response) throws Exception {
-
+        long now = new Date().getTime();
         MultiValueMap<String, String> parameters = UriComponentsBuilder.fromUriString(ProxyLiveUtils.getURL(request)).build().getQueryParams();
         if (!authService.loginUser(parameters.getFirst("user"), parameters.getFirst("pass"))) {
             response.setStatus(404);
             return;
         }
         String clientIdentifier = ProxyLiveUtils.getRequestIP(request) + ProxyLiveUtils.getBrowserInfo(request);
-        HLSStreamProcessor hlsStreamProcessor = streamProcessorsSession.getHLSStream(ProxyLiveUtils.getRequestIP(request), channel, profile);
+        DirectHLSTranscoderStreamProcessor hlsStreamProcessor = streamProcessorsSession.getHLSStream(ProxyLiveUtils.getRequestIP(request), channel, profile);
         if (hlsStreamProcessor == null) {
-            hlsStreamProcessor = (HLSStreamProcessor) context.getBean("StreamProcessor", ProxyLiveConstants.HLS_MODE, clientIdentifier, channel, profile);
+            hlsStreamProcessor = (DirectHLSTranscoderStreamProcessor) context.getBean("StreamProcessor", ProxyLiveConstants.HLS_MODE, clientIdentifier, channel, profile);
             hlsStreamProcessor.start();
         }
         ClientInfo client = streamProcessorsSession.manage(hlsStreamProcessor, request);
-        if (hlsStreamProcessor.isConnected()) {
+        //if (hlsStreamProcessor.isConnected()) {
             file = file.toLowerCase();
-            System.out.println("Client require:" + file);
-            InputStream downloadFile = getFileToUpload(file, hlsStreamProcessor, response);
+            System.out.println("Client require:" + file + " after " + (new Date().getTime() - now)/1000);
+            InputStream downloadFile = getFileToUpload(file, hlsStreamProcessor, request,response);
+            System.out.println("Client get Stream:" + file + " after " + (new Date().getTime() - now)/1000);
+            //probably the stream is not ready yet.
+            //file.endsWith("m3u8") &&
+            /*if(downloadFile==null){
+                //send fake playlist to stream something meanwhile is waitting
+                uploadFakeHLSFile(file,request,response);
+                System.out.println("Client dowloaded:" + file + " after " + (new Date().getTime() - now)/1000);
+                return;
+            }*/
             if (downloadFile != null) {
                 response.setStatus(200);
                 //response.setHeader(file, file);
@@ -323,19 +345,63 @@ public class StreamController {
             } else {
                 response.setStatus(404);
             }
-        } else {
-            response.setStatus(404);
+        System.out.println("Client exit("+response.getStatus()+") request:" + file + " after " + (new Date().getTime() - now)/1000);
+        //} else {
+            //    response.setStatus(404);
+            //}
+    }
+    @RequestMapping(value="/hls/dummy/{fileName:^(?i)playlist.m3u8|dummy\\d*.ts$}",method=RequestMethod.GET)
+    private void uploadFakeHLSFile(@PathVariable String fileName, HttpServletRequest request, HttpServletResponse response) throws IOException, InterruptedException {
+        File file = new File("C:\\lol\\"+fileName);
+        long now = new Date().getTime();
+        while(!file.exists() &&    (new Date().getTime() - now) < config.getFfmpeg().getHls().getTimeout()*1000) {
+            Thread.sleep(100);
         }
-    }*/
+        FileInputStream fis=new FileInputStream(file);
+
+        response.setHeader("Connection", "close");//keep-alive
+        response.setHeader("Access-Control-Allow-Origin","*");
+        response.setHeader("Access-Control-Expose-Headers","Content-Length");
+        response.setHeader(HttpHeaders.CACHE_CONTROL, "no-cache");
+        response.setHeader(HttpHeaders.CONTENT_LENGTH, ""+file.length());
+        response.setHeader(HttpHeaders.CONTENT_TYPE, getMediaType(fileName).toString());
+        response.setStatus(200);
+        //response.setHeader(file, file);
+        byte[] buffer = new byte[config.getBuffers().getChunkSize()];
+
+        OutputStream output = response.getOutputStream();
+        int len = 0;
+        try {
+            while ((len = fis.read(buffer)) != -1) {
+                output.write(buffer, 0, len);
+            }
+        } catch (Exception ex) {
+
+        } finally {
+            try {
+                output.close();
+            } catch (Exception ex2) {
+            }
+            try {
+                fis.close();
+            } catch (Exception ex2) {
+            }
+        }
+
+    }
+
     private MediaType getMediaType(String downloadFile) {
         String name = downloadFile;
         try {
             String extension = name.substring(name.lastIndexOf(".") + 1);
             switch (extension.toLowerCase()) {
                 case "ts":
-                    return new MediaType("application", "octet-stream");
+                    return new MediaType("video", "mp2t");
                 case "m3u8":
-                    return new MediaType("application", "octet-stream");
+                    return new MediaType("application", "vnd.apple.mpegurl");
+                    //x-mpegURL:
+                case "mpd":
+                    return new MediaType("application","dash+xml");
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -343,7 +409,7 @@ public class StreamController {
         return null;
     }
 
-    private InputStream getFileToUpload(String file, IHLSStreamProcessor hlsStreamProcessor, HttpServletResponse respHeaders) throws IOException, URISyntaxException, InterruptedException {
+    private InputStream getFileToUpload(String file, IHLSStreamProcessor hlsStreamProcessor, HttpServletRequest request,HttpServletResponse respHeaders) throws IOException, URISyntaxException, InterruptedException {
         InputStream downloadFile = null;
         long now = new Date().getTime();
         Long fileSize = null;
@@ -352,13 +418,33 @@ public class StreamController {
             do {
                 downloadFile = hlsStreamProcessor.getPlayList();
                 if (downloadFile == null) {
+                    //return null;
                     Thread.sleep(100);
 
                 }
-                if ((new Date().getTime() - now) > 60000) {
+                if ((new Date().getTime() - now) > config.getFfmpeg().getHls().getTimeout()*1000) {
                     return null;
                 }
             } while (downloadFile == null);
+            if(file.equals("playlist.m3u8")){
+                StringBuilder playlistEdit = new StringBuilder();
+                BufferedReader reader = new BufferedReader(new InputStreamReader(downloadFile));
+                String currentURL =ProxyLiveUtils.getURL(request);
+                if (config.getEndpoint() != null) {
+                    String baseURL= config.getEndpoint();
+                    currentURL = baseURL + currentURL.substring(currentURL.indexOf("/",7));
+                }
+                while(reader.ready()) {
+                    String line = reader.readLine();
+                    if(line.endsWith(".ts")){
+                        line = currentURL.replace("playlist.m3u8",line);
+                    }
+                    playlistEdit.append(line).append("\n");
+                }
+                downloadFile.close();
+                downloadFile = IOUtils.toInputStream(playlistEdit.toString());
+
+            }
             fileSize = Long.valueOf(downloadFile.available());
         } else {
             do {
@@ -367,13 +453,15 @@ public class StreamController {
                 if (downloadFile == null) {
                     Thread.sleep(100);
                 }
-                if ((new Date().getTime() - now) > 60000) {
+                if ((new Date().getTime() - now) > config.getFfmpeg().getHls().getTimeout()*1000) {
                     return null;
                 }
             } while (downloadFile == null);
             fileSize = hlsStreamProcessor.getSegmentSize(file);
         }
-        respHeaders.setHeader("Connection", "close");
+        respHeaders.setHeader("Connection", "close");//keep-alive
+        respHeaders.setHeader("Access-Control-Allow-Origin","*");
+        respHeaders.setHeader("Access-Control-Expose-Headers","Content-Length");
         respHeaders.setHeader(HttpHeaders.CACHE_CONTROL, "no-cache");
         respHeaders.setHeader(HttpHeaders.CONTENT_LENGTH, fileSize.toString());
         respHeaders.setHeader(HttpHeaders.CONTENT_TYPE, getMediaType(file).toString());

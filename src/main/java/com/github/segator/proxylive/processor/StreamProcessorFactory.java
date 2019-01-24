@@ -45,26 +45,20 @@ public class StreamProcessorFactory {
     @Bean
     @Scope(value = "prototype")
     public IStreamProcessor StreamProcessor(int mode, String clientIdentifier, String channel, String profile) {
-
-        HttpSoureStreamProcessor sourceStreamProcessor = (HttpSoureStreamProcessor) context.getBean("HttpSoureStreamProcessor", clientIdentifier, channel);
-
         IStreamProcessor streamProcessor = null;
-        if (profile==null || profile.equals("raw")) {
-            streamProcessor = sourceStreamProcessor;
-        } else {
-            //streamProcessor = (IStreamProcessor) context.getBean("TranscodedStreamProcessor", identifier64, sourceStreamProcessor, profile);
-            streamProcessor = (IStreamProcessor) context.getBean("DirectTranscodedStreamProcessor", clientIdentifier, channel, profile);
-        }
-        IStreamProcessor postStreamProcessor = null;
         switch (mode) {
             case ProxyLiveConstants.HLS_MODE:
-                postStreamProcessor = (IStreamProcessor) context.getBean("HLSStreamProcessor", clientIdentifier, streamProcessor);
+                streamProcessor = (IStreamProcessor) context.getBean("DirectHLSTranscoderStreamProcessor", clientIdentifier, channel, profile);
                 break;
             case ProxyLiveConstants.STREAM_MODE:
-                postStreamProcessor = streamProcessor;
+                if (profile==null || profile.equals("raw")) {
+                    streamProcessor = (HttpSoureStreamProcessor) context.getBean("HttpSoureStreamProcessor", clientIdentifier, channel);
+                }else{
+                    streamProcessor = (IStreamProcessor) context.getBean("DirectTranscodedStreamProcessor", clientIdentifier, channel, profile);
+                }
                 break;
         }
-        return postStreamProcessor;
+        return streamProcessor;
 
     }
 
@@ -84,6 +78,13 @@ public class StreamProcessorFactory {
     public IStreamProcessor DirectTranscodedStreamProcessor(String identifier,String channel, String profile) {
         return new DirectTranscoderStreamProcessor(channel, profile,identifier);
     }
+
+    @Bean
+    @Scope(value = "prototype")
+    public IStreamProcessor DirectHLSTranscoderStreamProcessor(String identifier,String channel, String profile) {
+        return new DirectHLSTranscoderStreamProcessor(channel, profile,identifier);
+    }
+
 
     @Bean
     @Scope(value = "prototype")
