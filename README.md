@@ -13,6 +13,9 @@ http://[server]:8080/channel/list/[format]/[profile]
 in case of auth enabled
 http://[server]:8080/channel/list/[format]/[profile]?user=clientUser&pass=clientPass
 
+if you want to load EPG(now only is extracted from tvheadend)
+http://[server]:8080/epg
+
 #### server
 ip or domain of the host where the application is running
 
@@ -42,26 +45,36 @@ source:
     tvheadendurl: http://tvheadend:9981/stream/channel/{id}
     #In case of source connection problem, retry connection in 10 seconds
     reconnectTimeout: 10
+streamTimeout: 60 
+#Client Stream timeout, if no bytes from backend on this timeout range, the client connection will be closed
 ffmpeg:
     path: '/usr/bin/ffmpeg'
     profiles:
         -
             alias: "aac"
-            parameters: "-c:a:0 aac -b:a 320k -c:v copy -threads 0 -f mpegts"
+            parameters: "-sn -c:a:0 aac -b:a 320k -c:v copy"
         -
-            alias: "raw"
-            parameters: "-c:a copy -c:v copy -threads 0 -f mpegts"
+            alias: "360p"
+            parameters: "-sn -c:a:0 aac -b:a 128k -c:v libx264 -tune zerolatency -g 10 -vprofile high -level 3.0 -crf 18 -movflags +faststart -bufsize 15000k -maxrate 700k  -preset veryfast -vf scale=-1:360,yadif=0"
+        -
+            alias: "480p"
+            parameters: "-sn -c:a:0 aac -b:a 196k -c:v libx264 -tune zerolatency -g 10 -vprofile high -level 3.0 -crf 18 -movflags +faststart -bufsize 15000k -maxrate 1500k  -preset veryfast -vf scale=-1:480,yadif=0"
         -
             alias: "720p"
-            parameters: "-c:a:0 aac -b:a 320k -c:v libx264 -tune zerolatency -g 10 -vprofile high -level 4.0 -crf 18 -movflags +faststart -bufsize 15000k -maxrate 10000k  -preset fast -vf \"scale=-1:720,yadif=0\" -threads 0 -f mpegts"
+            parameters: "-sn  -c:a:0 aac -b:a 320k -c:v libx264 -tune zerolatency -g 10 -vprofile high -level 4.0 -crf 18 -movflags +faststart -bufsize 15000k -maxrate 3000k  -preset veryfast -vf scale=-1:720,yadif=0"
         -
             alias: "1080p"
-            parameters:  "-c:a:0 aac -b:a 320k -c:v libx264 -tune zerolatency -g 10 -vprofile high -level 4.1 -crf 21 -movflags +faststart -bufsize 15000k -maxrate 10000k  -preset fast -vf yadif=0 -threads 0 -f mpegts"
-    
+            parameters:  "-sn  -c:a:0 aac -b:a 320k -c:v libx264 -tune zerolatency -g 300 -vprofile high -level 4.0 -movflags +faststart -bufsize 15000k -maxrate 5000k  -preset veryfast -vf yadif=0"
+    mpegTS:
+        parameters: "-threads 0 -f mpegts -mpegts_m2ts_mode 1 -mpegts_copyts 1 -mpegts_flags +resend_headers  "
+		#Specific parameters for mpegTS(only works if a diferent profile than raw is selected, raw send direct data from backend so no transcoded, in this case not applied this parameter.
     hls:
         tempPath: "/tmp"
-        parameters: "-vcodec copy -acodec copy   -flags -global_header  -avoid_negative_ts disabled -map_metadata -1 -start_at_zero -copyts -flags -global_header -vsync cfr -y -nostats -f hls -hls_time 1 -hls_list_size 20 -hls_wrap 30"
+		#Path where HLS will save segment files and playlist
+        parameters: "-flags -global_header  -avoid_negative_ts disabled -map_metadata -1 -start_at_zero -copyts -flags -global_header -vsync cfr -y -nostats -f hls  -hls_time 2 -hls_list_size 10 -hls_wrap 20 -hls_allow_cache 0  -hls_flags +append_list -hls_flags +discont_start -hls_flags +delete_segments"
+		#FFmpeg parameters specific for HLS		
         timeout: 120
+		#When user disconnect from stream, we doesnt have any way to be sure the user is totally disconnected so this parameter control how many seconds since last download of a segment of a concret stream, if the timeout is reached, the timeout is canceled.
         
 buffers:
     #The max amount of bytes the application can read from a stream, default 1MB
@@ -128,4 +141,5 @@ docker run -d -v /my/application.yml:/app/application.yml segator/proxylive
 - [X] Plex Authentication
 - [ ] LDAP Authentication
 - [X] Playlist Generator
+- [X] EPG extractor
 - [ ] Refactor(This application is a Prove of concept, the code is not clean enough and aren't tested to use in a production environment

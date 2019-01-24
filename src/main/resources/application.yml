@@ -11,9 +11,6 @@ ffmpeg:
             alias: "aac"
             parameters: "-sn -c:a:0 aac -b:a 320k -c:v copy"
         -
-            alias: "raw"
-            parameters: "-c:a copy -c:v copy"
-        -
             alias: "360p"
             parameters: "-sn -c:a:0 aac -b:a 128k -c:v libx264 -tune zerolatency -g 10 -vprofile high -level 3.0 -crf 18 -movflags +faststart -bufsize 15000k -maxrate 700k  -preset veryfast -vf scale=-1:360,yadif=0"
         -
