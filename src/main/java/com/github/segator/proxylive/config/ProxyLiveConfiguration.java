@@ -28,6 +28,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import org.springframework.context.annotation.Configuration;
 
+import javax.annotation.PostConstruct;
+
 /**
  *
  * @author Isaac Aymerich <isaac.aymerich@gmail.com>
@@ -42,6 +44,20 @@ public class ProxyLiveConfiguration {
     private AuthenticationConfiguration authentication;
     private String endpoint;
     private int streamTimeout;
+    private boolean internalConnection;
+    private String internalToken;
+
+    @PostConstruct
+    public void initializeBean() {
+        int count=40;
+        final String VALIDCHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        StringBuilder builder = new StringBuilder();
+        while (count-- != 0) {
+            int character = (int)(Math.random()*VALIDCHARS.length());
+            builder.append(VALIDCHARS.charAt(character));
+        }
+        internalToken= builder.toString();
+    }
 
     public FFMpegConfiguration getFfmpeg() {
         return ffmpeg;
@@ -92,5 +108,17 @@ public class ProxyLiveConfiguration {
 
     public void setStreamTimeout(int streamTimeout) {
         this.streamTimeout = streamTimeout;
+    }
+
+    public boolean isInternalConnection() {
+        return internalConnection;
+    }
+
+    public void setInternalConnection(boolean internalConnection) {
+        this.internalConnection = internalConnection;
+    }
+
+    public String getInternalToken() {
+        return internalToken;
     }
 }

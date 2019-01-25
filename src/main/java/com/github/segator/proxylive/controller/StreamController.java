@@ -28,9 +28,12 @@ import com.github.segator.proxylive.ProxyLiveUtils;
 import com.github.segator.proxylive.entity.ClientInfo;
 import com.github.segator.proxylive.processor.DirectHLSTranscoderStreamProcessor;
 import com.github.segator.proxylive.processor.IStreamMultiplexerProcessor;
+import com.github.segator.proxylive.stream.BroadcastCircularBufferedOutputStream;
+import com.github.segator.proxylive.stream.WithoutBlockingInputStream;
 import com.github.segator.proxylive.tasks.StreamProcessorsSession;
 
 import java.io.*;
+import javax.annotation.PostConstruct;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -88,14 +91,19 @@ public class StreamController {
     private JSONArray cachedChannelList;
     private JSONArray cachedChannelTags;
 
+    private String internalToken;
+
     @RequestMapping(value = "/view/{profile}/{channel}",method=RequestMethod.GET)
     public void dispatchStream(@PathVariable("profile") String profile, @PathVariable("channel") String channel,
             HttpServletRequest request, HttpServletResponse response) throws Exception {
         System.out.println("received connection controller");
         MultiValueMap<String, String> parameters = UriComponentsBuilder.fromUriString(ProxyLiveUtils.getURL(request)).build().getQueryParams();
-        if (!authService.loginUser(parameters.getFirst("user"), parameters.getFirst("pass"))) {
-            response.setStatus(HttpStatus.NOT_FOUND.value());
-            return;
+        String internalConnection = parameters.getFirst("internalToken");
+        if(internalConnection==null || !internalConnection.equals(config.getInternalToken())) {
+            if (!authService.loginUser(parameters.getFirst("user"), parameters.getFirst("pass"))) {
+                response.setStatus(HttpStatus.NOT_FOUND.value());
+                return;
+            }
         }
         JSONObject channelInfo = getChannelData(channel);
         if (!isChannelAllowed(getAllowedTags(null, null, null), channelInfo)) {

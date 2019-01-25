@@ -22,6 +22,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
 
 /**
  *
@@ -33,6 +35,10 @@ public class DirectTranscodeTask implements IMultiplexerStreamer {
     private FFmpegProfilerService ffmpegProfilerService;
     @Autowired
     private ProxyLiveConfiguration config;
+
+    @Value("${local.server.port}")
+    int serverPort;
+
     private String url;
     private final String profile;
     private final String channelName;
@@ -53,7 +59,11 @@ public class DirectTranscodeTask implements IMultiplexerStreamer {
 
     @PostConstruct
     public void initializeBean() {
-        url = config.getSource().getTvheadendurl() + "/stream/channel/" + channelName;
+        if(config.isInternalConnection()){
+            url = "http://localhost:"+serverPort+"/view/raw/" + channelName+"?user=internal&internalToken="+config.getInternalToken();
+        }else {
+            url = config.getSource().getTvheadendurl() + "/stream/channel/" + channelName;
+        }
         multiplexerOutputStream = new BroadcastCircularBufferedOutputStream(config.getBuffers().getBroadcastBufferSize());
 
     }

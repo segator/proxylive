@@ -47,6 +47,7 @@ package com.github.segator.proxylive.tasks;
         import java.util.logging.Logger;
         import org.apache.commons.io.FileUtils;
         import org.springframework.beans.factory.annotation.Autowired;
+        import org.springframework.beans.factory.annotation.Value;
 
         import javax.annotation.PostConstruct;
 
@@ -60,6 +61,8 @@ public class HLSDirectTask implements IStreamTask {
     private FFmpegProfilerService ffmpegProfilerService;
     @Autowired
     private ProxyLiveConfiguration config;
+    @Value("${local.server.port}")
+    int serverPort;
 
     private final String profile;
     private final String channelName;
@@ -89,7 +92,12 @@ public class HLSDirectTask implements IStreamTask {
 
     @PostConstruct
     public void initializeBean() {
-        url = config.getSource().getTvheadendurl() + "/stream/channel/" + channelName;
+
+        if(config.isInternalConnection()){
+            url = "http://localhost:"+serverPort+"/view/"+profile+"/" + channelName+"?user=internal&internalToken="+config.getInternalToken();
+        }else {
+            url = config.getSource().getTvheadendurl() + "/stream/channel/" + channelName;
+        }
     }
     @Override
     public String toString() {
@@ -131,7 +139,12 @@ public class HLSDirectTask implements IStreamTask {
             dateFormatter = new SimpleDateFormat(ffmpegProfilerService.getSegmentDate("SimpleDateFormat"));
             System.out.println("[" + getIdentifier() + "] Start HLS");
             hlsParameters = ffmpegProfilerService.getHLSParameters(getIdentifier());
-            transcodeParameters = ffmpegProfilerService.getTranscodeParameters(profile);
+            if(config.isInternalConnection()){
+                transcodeParameters = " -c:a copy -c:v copy ";
+            }else{
+                transcodeParameters = ffmpegProfilerService.getTranscodeParameters(profile);
+            }
+
             String hlsTempPath = ffmpegProfilerService.getHLSTemporalPath(getIdentifier());
             File tmpOutputHLSPath = new File(hlsTempPath);
             try {
