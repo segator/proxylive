@@ -47,6 +47,13 @@ source:
     reconnectTimeout: 10
 streamTimeout: 60 
 #Client Stream timeout, if no bytes from backend on this timeout range, the client connection will be closed
+internalConnection: true
+#all tasks always try to connect to  proxylive(loop) instead of direct to tvheadend.
+#Pros:
+#-Single connection to tvheadend per channel
+#-when 2 clients with HLS and mpegTS with the same transcoding profile only transcoded one time.(so less cpu usage)
+#Cons:
+#-Slower start when the channel is not yet initialized on HLS/or mpegTs with transcoding.
 ffmpeg:
     path: '/usr/bin/ffmpeg'
     profiles:
