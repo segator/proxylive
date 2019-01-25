@@ -28,9 +28,11 @@ import com.github.segator.proxylive.entity.ClientInfo;
 import com.github.segator.proxylive.processor.DirectHLSTranscoderStreamProcessor;
 import com.github.segator.proxylive.processor.HLSStreamProcessor;
 import com.github.segator.proxylive.processor.IStreamProcessor;
-import java.util.ArrayList;
-import java.util.List;
+
+import java.util.*;
 import javax.servlet.http.HttpServletRequest;
+
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -43,9 +45,44 @@ import org.springframework.web.util.UriComponentsBuilder;
 public class StreamProcessorsSession {
 
     private final List<ClientInfo> clientInfoList;
+    private final Map<String, Long> cacheClientsLogged;
+    private final Map<String, Long> cacheClientsFailed;
 
     public StreamProcessorsSession() {
+        cacheClientsLogged = new HashMap();
+        cacheClientsFailed = new HashMap();
         clientInfoList = new ArrayList();
+    }
+
+    public  void addCacheClient(String user,boolean logged) {
+        synchronized (this) {
+            if (logged) {
+                cacheClientsLogged.put(user, new Date().getTime() + 1800000); //30 min cache
+            } else {
+                cacheClientsFailed.put(user, new Date().getTime() + 5000); //5s cache
+            }
+        }
+    }
+
+    public Boolean isUserLogged(String user){
+        boolean logged=false;
+       Long expireTime = cacheClientsLogged.get(user);
+       if(expireTime==null){
+           expireTime = cacheClientsFailed.get(user);
+           if(expireTime==null){
+               return null;
+           }else if(new Date().getTime() > expireTime){
+               return null;
+           }else{
+               return false;
+           }
+       }else{
+           if(new Date().getTime() > expireTime){
+               return null;
+           }else{
+               return true;
+           }
+       }
     }
 
     public synchronized ClientInfo addClientInfo(ClientInfo client) {

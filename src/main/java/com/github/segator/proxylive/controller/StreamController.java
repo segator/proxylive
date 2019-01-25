@@ -93,17 +93,35 @@ public class StreamController {
 
     private String internalToken;
 
-    @RequestMapping(value = "/view/{profile}/{channel}",method=RequestMethod.GET)
-    public void dispatchStream(@PathVariable("profile") String profile, @PathVariable("channel") String channel,
-            HttpServletRequest request, HttpServletResponse response) throws Exception {
-        System.out.println("received connection controller");
+    private boolean userValidation(HttpServletRequest request,HttpServletResponse response) throws Exception {
         MultiValueMap<String, String> parameters = UriComponentsBuilder.fromUriString(ProxyLiveUtils.getURL(request)).build().getQueryParams();
         String internalConnection = parameters.getFirst("internalToken");
         if(internalConnection==null || !internalConnection.equals(config.getInternalToken())) {
-            if (!authService.loginUser(parameters.getFirst("user"), parameters.getFirst("pass"))) {
-                response.setStatus(HttpStatus.NOT_FOUND.value());
-                return;
+            /*if(parameters.getFirst("user")==null ||  parameters.getFirst("pass") == null){
+                response.setStatus(HttpStatus.UNAUTHORIZED.value());
+                return false;
+            }*/
+            Boolean userLoggedResult = streamProcessorsSession.isUserLogged(parameters.getFirst("user"));
+
+            if(userLoggedResult==null || !userLoggedResult) {
+                if (!authService.loginUser(parameters.getFirst("user"), parameters.getFirst("pass"))) {
+                    streamProcessorsSession.addCacheClient(parameters.getFirst("user"),false);
+                    response.setStatus(HttpStatus.UNAUTHORIZED.value());
+                    return false;
+                } else {
+                    streamProcessorsSession.addCacheClient(parameters.getFirst("user"),true);
+                }
             }
+        }
+        return true;
+    }
+
+    @RequestMapping(value = "/view/{profile}/{channel}",method=RequestMethod.GET)
+    public void dispatchStream(@PathVariable("profile") String profile, @PathVariable("channel") String channel,
+            HttpServletRequest request, HttpServletResponse response) throws Exception {
+
+        if(!userValidation(request,response)){
+            return;
         }
         JSONObject channelInfo = getChannelData(channel);
         if (!isChannelAllowed(getAllowedTags(null, null, null), channelInfo)) {
@@ -219,9 +237,8 @@ public class StreamController {
     public @ResponseBody
     String generatePlaylist(HttpServletRequest request, HttpServletResponse response, @PathVariable("profile") String profile, @PathVariable("format") String format) throws MalformedURLException, ProtocolException, IOException, ParseException, Exception {
         MultiValueMap<String, String> parameters = UriComponentsBuilder.fromUriString(ProxyLiveUtils.getURL(request)).build().getQueryParams();
-        if (!authService.loginUser(parameters.getFirst("user"), parameters.getFirst("pass"))) {
-            response.setStatus(HttpStatus.NOT_FOUND.value());
-            return "Invalid login";
+        if(!userValidation(request,response)){
+            return "invalid user";
         }
         response.setHeader("Content-Disposition", "attachment; filename=playlist.m3u");
         response.setHeader("Access-Control-Allow-Origin", "*");
@@ -303,9 +320,7 @@ public class StreamController {
     public void dispatchHLS(@PathVariable("profile") String profile, @PathVariable("channel") String channel,
             @PathVariable String file, HttpServletRequest request, HttpServletResponse response) throws Exception {
         long now = new Date().getTime();
-        MultiValueMap<String, String> parameters = UriComponentsBuilder.fromUriString(ProxyLiveUtils.getURL(request)).build().getQueryParams();
-        if (!authService.loginUser(parameters.getFirst("user"), parameters.getFirst("pass"))) {
-            response.setStatus(404);
+        if(!userValidation(request,response)){
             return;
         }
         String clientIdentifier = ProxyLiveUtils.getRequestIP(request) + ProxyLiveUtils.getBrowserInfo(request);
