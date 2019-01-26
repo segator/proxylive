@@ -105,6 +105,7 @@ public class HttpDownloaderTask implements IMultiplexerStreamer {
             }
             System.out.println("[" + getIdentifier() + "]Required Http stream terminated");
         } catch (Exception ex) {
+            ex.printStackTrace();
             crashTimes++;
             if (crashTimes > 10) {
                 crashed = true;

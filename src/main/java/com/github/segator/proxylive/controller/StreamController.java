@@ -144,6 +144,9 @@ public class StreamController {
                 byte[] buffer = new byte[config.getBuffers().getChunkSize()];
                 int len;
                 try {
+
+                    //RandomAccessFile fis = new RandomAccessFile("C:\\lol\\video.ts","r");
+
                     long lastReaded  = new Date().getTime();
                     while (true) {
                         len = multiplexedInputStream.read(buffer);
@@ -151,10 +154,15 @@ public class StreamController {
                             lastReaded = new Date().getTime();
                             clientStream.write(buffer, 0, len);
                         } else {
-                            if(lastReaded - new Date().getTime() > config.getStreamTimeoutMilis()) {
+                            if((new Date().getTime() - lastReaded)  > config.getStreamTimeoutMilis()) {
                                 throw new IOException("Disconnected" + client + " because timeout on " + iStreamProcessor);
+                            /*}else if((new Date().getTime() - lastReaded)  > 500 && profile.equals("raw")) {
+                                if(fis.getFilePointer()==fis.length()){fis.seek(0);}
+                                len = fis.read(buffer);
+                                clientStream.write(buffer, 0, len);
+                                Thread.sleep(100);*/
                             }else {
-                                Thread.sleep(1);
+                                Thread.sleep(10);
                             }
                         }
                     }

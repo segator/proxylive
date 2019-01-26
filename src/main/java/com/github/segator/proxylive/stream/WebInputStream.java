@@ -41,11 +41,11 @@ public class WebInputStream extends InputStream {
     private final int minSecondsBetweenReconnects;
     private HttpURLConnection connection;
     private InputStream httpInputStream;
-    private long lastConnection;
+    private long lastConnectionTry;
 
     public WebInputStream(URL url, int minSecondsBetweenReconnects) throws MalformedURLException, IOException {
         this.url = url;
-        this.lastConnection = 0;
+        this.lastConnectionTry = 0;
         this.minSecondsBetweenReconnects = minSecondsBetweenReconnects;
     }
 
@@ -66,7 +66,7 @@ public class WebInputStream extends InputStream {
         boolean connected = connection.getResponseCode() == 200 || connection.getResponseCode() == 204;
         System.out.println("response code of " + url.toString() + " is " + connection.getResponseCode());
         httpInputStream = connection.getInputStream();
-        lastConnection = new Date().getTime();
+        lastConnectionTry = new Date().getTime();
         return connected;
     }
 
@@ -111,7 +111,7 @@ public class WebInputStream extends InputStream {
     }
 
     private synchronized boolean reconnect() throws IOException {
-        int secondsFromLastConnect = (int) ((new Date().getTime() - lastConnection) / 1000);
+        int secondsFromLastConnect = (int) ((new Date().getTime() - lastConnectionTry) / 1000);
         if (secondsFromLastConnect > minSecondsBetweenReconnects) {
             System.out.println("Reconnecting " + url.toString());
             try {
@@ -122,6 +122,7 @@ public class WebInputStream extends InputStream {
                 connection.disconnect();
             } catch (Exception ex) {
             }
+            lastConnectionTry = new Date().getTime();
             return connect();
         } else {
             return false;
@@ -129,7 +130,7 @@ public class WebInputStream extends InputStream {
     }
 
     public long getLastConnection() {
-        return lastConnection;
+        return lastConnectionTry;
     }
     
 }
