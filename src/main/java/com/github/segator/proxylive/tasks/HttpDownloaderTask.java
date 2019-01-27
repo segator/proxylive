@@ -43,6 +43,7 @@ public class HttpDownloaderTask implements IMultiplexerStreamer {
 
     private String url;
     private final String channelName;
+    private Date runDate;
     private WebInputStream webInputStream;
     private BroadcastCircularBufferedOutputStream multiplexerOutputStream;
     private boolean terminate = false;
@@ -91,6 +92,7 @@ public class HttpDownloaderTask implements IMultiplexerStreamer {
 
     @Override
     public void run() {
+        runDate = new Date();
         int len;
         try {
             System.out.println("[" + getIdentifier() + "] Start Http stream");
@@ -107,7 +109,7 @@ public class HttpDownloaderTask implements IMultiplexerStreamer {
         } catch (Exception ex) {
             ex.printStackTrace();
             crashTimes++;
-            if (crashTimes > 10) {
+            if (crashTimes > 10 || terminate) {
                 crashed = true;
             } else {
                 closeWebStream();
@@ -178,10 +180,7 @@ public class HttpDownloaderTask implements IMultiplexerStreamer {
 
     @Override
     public Date startTaskDate() {
-        if (webInputStream != null) {
-            return new Date(webInputStream.getLastConnection());
-        }
-        return null;
+        return runDate;
     }
 
 }

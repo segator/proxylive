@@ -52,8 +52,7 @@ public class ProcessorTasks {
     @Autowired
     private ProxyLiveConfiguration config;
 
-    @Autowired
-    private ProcessorTasks tasks;
+
 
     public ProcessorTasks() {
         httpSourceStreamTasks = new HashMap();
