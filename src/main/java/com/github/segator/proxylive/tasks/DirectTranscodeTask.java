@@ -6,6 +6,7 @@
 package com.github.segator.proxylive.tasks;
 
 import com.github.segator.proxylive.config.ProxyLiveConfiguration;
+import com.github.segator.proxylive.entity.Channel;
 import com.github.segator.proxylive.processor.IStreamMultiplexerProcessor;
 import com.github.segator.proxylive.processor.IStreamProcessor;
 import com.github.segator.proxylive.profiler.FFmpegProfilerService;
@@ -20,6 +21,7 @@ import java.util.Date;
 import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 import javax.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -41,7 +43,7 @@ public class DirectTranscodeTask implements IMultiplexerStreamer {
 
     private String url;
     private final String profile;
-    private final String channelName;
+    private final Channel channel;
     private BroadcastCircularBufferedOutputStream multiplexerOutputStream;
     private String transcodeParameters;
     private Process process;
@@ -52,17 +54,17 @@ public class DirectTranscodeTask implements IMultiplexerStreamer {
     private int crashedTimes = 0;
     private Thread errorReaderThread;
 
-    public DirectTranscodeTask(String channelName, String profile) {
+    public DirectTranscodeTask(Channel channel, String profile) {
         this.profile = profile;
-        this.channelName = channelName;
+        this.channel = channel;
     }
 
     @PostConstruct
     public void initializeBean() {
         if(config.isInternalConnection()){
-            url = "http://localhost:"+serverPort+"/view/raw/" + channelName+"?user=internal&internalToken="+config.getInternalToken();
+            url = "http://localhost:"+serverPort+"/view/raw/" + channel.getId()+"?user=internal&token="+config.getInternalToken();
         }else {
-            url = config.getSource().getTvheadendurl() + "/stream/channel/" + channelName;
+            url =channel.getSources().get(0).getUrl();
         }
         multiplexerOutputStream = new BroadcastCircularBufferedOutputStream(config.getBuffers().getBroadcastBufferSize());
 
@@ -195,7 +197,7 @@ public class DirectTranscodeTask implements IMultiplexerStreamer {
 
     @Override
     public String getIdentifier() {
-        return channelName + "_" + profile;
+        return channel.getId() + "_" + profile;
     }
 
     @Override

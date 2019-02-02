@@ -28,18 +28,34 @@ package com.github.segator.proxylive.config;
  * @author Isaac Aymerich <isaac.aymerich@gmail.com>
  */
 public class HttpLiveSource {
-
-    private String tvheadendurl;
+    private String tvheadendURL;
+    private EPGConfiguration epg;
     private int reconnectTimeout;
     private int channelListCacheTime=600;
+    private ChannelsConfiguration channels;
 
-
-    public String getTvheadendurl() {
-        return tvheadendurl;
+    public String getTvheadendURL() {
+        return tvheadendURL;
     }
 
-    public void setTvheadendurl(String url) {
-        this.tvheadendurl = url;
+    public void setTvheadendURL(String tvheadendURL) {
+        this.tvheadendURL = tvheadendURL;
+    }
+
+    public EPGConfiguration getEpg() {
+        return epg;
+    }
+
+    public void setEpg(EPGConfiguration epg) {
+        this.epg = epg;
+    }
+
+    public ChannelsConfiguration getChannels() {
+        return channels;
+    }
+
+    public void setChannels(ChannelsConfiguration channels) {
+        this.channels = channels;
     }
 
     public int getReconnectTimeout() {

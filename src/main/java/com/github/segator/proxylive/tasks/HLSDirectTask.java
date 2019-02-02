@@ -25,6 +25,7 @@ package com.github.segator.proxylive.tasks;
 
         import com.github.segator.proxylive.ProxyLiveUtils;
         import com.github.segator.proxylive.config.ProxyLiveConfiguration;
+        import com.github.segator.proxylive.entity.Channel;
         import com.github.segator.proxylive.processor.IStreamProcessor;
         import com.github.segator.proxylive.profiler.FFmpegProfilerService;
         import com.github.segator.proxylive.stream.WithoutBlockingInputStream;
@@ -36,6 +37,7 @@ package com.github.segator.proxylive.tasks;
         import java.io.InputStream;
         import java.net.URISyntaxException;
         import java.nio.file.Files;
+        import java.nio.file.Path;
         import java.nio.file.Paths;
         import java.text.SimpleDateFormat;
         import java.util.Date;
@@ -45,6 +47,8 @@ package com.github.segator.proxylive.tasks;
         import java.util.Objects;
         import java.util.logging.Level;
         import java.util.logging.Logger;
+        import java.util.regex.Pattern;
+
         import org.apache.commons.io.FileUtils;
         import org.springframework.beans.factory.annotation.Autowired;
         import org.springframework.beans.factory.annotation.Value;
@@ -65,7 +69,7 @@ public class HLSDirectTask implements IStreamTask {
     int serverPort;
 
     private final String profile;
-    private final String channelName;
+    private final Channel channel;
     private Thread inputThread;
     private String url;
     private Process process;
@@ -82,9 +86,9 @@ public class HLSDirectTask implements IStreamTask {
     private Long lastAccess;
 
 
-    public HLSDirectTask(String channelName, String profile) {
+    public HLSDirectTask(Channel channel, String profile) {
         this.profile = profile;
-        this.channelName = channelName;
+        this.channel = channel;
         this.segmentsInputs = new HashMap();
         //this.readableSegments = new ArrayList();
         this.playlistCount = 0;
@@ -94,9 +98,9 @@ public class HLSDirectTask implements IStreamTask {
     public void initializeBean() {
 
         if(config.isInternalConnection()){
-            url = "http://localhost:"+serverPort+"/view/"+profile+"/" + channelName+"?user=internal&internalToken="+config.getInternalToken();
+            url = "http://localhost:"+serverPort+"/view/"+profile+"/" + channel.getId()+"?user=internal&token="+config.getInternalToken();
         }else {
-            url = config.getSource().getTvheadendurl() + "/stream/channel/" + channelName;
+            url = channel.getSources().get(0).getUrl();
         }
     }
     @Override
@@ -124,7 +128,7 @@ public class HLSDirectTask implements IStreamTask {
 
     @Override
     public String getIdentifier() {
-        return channelName + "_" + profile + "_HLS";
+        return channel.getId() + "_" + profile + "_HLS";
     }
 
     @Override
@@ -139,14 +143,16 @@ public class HLSDirectTask implements IStreamTask {
             dateFormatter = new SimpleDateFormat(ffmpegProfilerService.getSegmentDate("SimpleDateFormat"));
             System.out.println("[" + getIdentifier() + "] Start HLS");
             hlsParameters = ffmpegProfilerService.getHLSParameters(getIdentifier());
+
+            //If is not internal COnnnection we arre not going to reuse transcoded  streams so we need to add to ffmpeg transcoding parameters.
             if(config.isInternalConnection()){
                 transcodeParameters = " -c:a copy -c:v copy ";
             }else{
                 transcodeParameters = ffmpegProfilerService.getTranscodeParameters(profile);
             }
 
-            String hlsTempPath = ffmpegProfilerService.getHLSTemporalPath(getIdentifier());
-            File tmpOutputHLSPath = new File(hlsTempPath);
+            Path hlsTempPath = ffmpegProfilerService.getHLSTemporalPath(getIdentifier());
+            File tmpOutputHLSPath = hlsTempPath.toFile();
             try {
                 FileUtils.deleteDirectory(tmpOutputHLSPath);
             } catch (Exception ex) {
@@ -203,7 +209,7 @@ public class HLSDirectTask implements IStreamTask {
             }
         } else {
             try {
-                FileUtils.deleteDirectory(new File(ffmpegProfilerService.getHLSTemporalPath(getIdentifier())));
+                FileUtils.deleteDirectory(ffmpegProfilerService.getHLSTemporalPath(getIdentifier()).toFile());
             } catch (Exception ex) {
             }
             System.out.println("[" + getIdentifier() + "] Terminated HLS");
@@ -228,7 +234,7 @@ public class HLSDirectTask implements IStreamTask {
     }
 
     private File buildSegmentFile(String segment) {
-        return new File(ffmpegProfilerService.getHLSTemporalPath(getIdentifier()) + segment);
+        return new File(ffmpegProfilerService.getHLSTemporalPath(getIdentifier()) + File.separator + segment);
     }
 
     public InputStream getSegment(String segment) throws FileNotFoundException {
@@ -301,8 +307,8 @@ public class HLSDirectTask implements IStreamTask {
                 process.destroy();
             }
             try {
-                String hlsTempPath = ffmpegProfilerService.getHLSTemporalPath(getIdentifier());
-                File tmpOutputHLSPath = new File(hlsTempPath);
+                Path hlsTempPath = ffmpegProfilerService.getHLSTemporalPath(getIdentifier());
+                File tmpOutputHLSPath = ((Path) hlsTempPath).toFile();
                 FileUtils.deleteDirectory(tmpOutputHLSPath);
             } catch (Exception ex) {
             }
@@ -315,7 +321,7 @@ public class HLSDirectTask implements IStreamTask {
     }
 
     private byte[] readPlayListDirect() throws IOException, URISyntaxException {
-        String playlistSt = ffmpegProfilerService.getHLSTemporalPath(getIdentifier()) + "playlist.m3u8";
+        String playlistSt = ffmpegProfilerService.getHLSTemporalPath(getIdentifier()) + File.separator +"playlist.m3u8";
         File playList = new File(playlistSt);
         if (playList.exists() && playList.length() > 0) {
             return Files.readAllBytes(Paths.get(playlistSt));

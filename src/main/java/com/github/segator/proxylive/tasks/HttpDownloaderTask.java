@@ -23,6 +23,7 @@
  */
 package com.github.segator.proxylive.tasks;
 
+import com.github.segator.proxylive.entity.Channel;
 import com.github.segator.proxylive.processor.IStreamProcessor;
 import com.github.segator.proxylive.stream.BroadcastCircularBufferedOutputStream;
 import com.github.segator.proxylive.stream.WebInputStream;
@@ -31,6 +32,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Date;
 import java.util.Objects;
+import java.util.regex.Pattern;
 import javax.annotation.PostConstruct;
 import com.github.segator.proxylive.config.ProxyLiveConfiguration;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,7 +44,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class HttpDownloaderTask implements IMultiplexerStreamer {
 
     private String url;
-    private final String channelName;
+    private final Channel channel;
     private Date runDate;
     private WebInputStream webInputStream;
     private BroadcastCircularBufferedOutputStream multiplexerOutputStream;
@@ -53,14 +55,14 @@ public class HttpDownloaderTask implements IMultiplexerStreamer {
     @Autowired
     private ProxyLiveConfiguration config;
 
-    public HttpDownloaderTask(String channelName) throws MalformedURLException, IOException {
-        this.channelName = channelName;
+    public HttpDownloaderTask(Channel channel) throws MalformedURLException, IOException {
+        this.channel = channel;
 
     }
 
     @PostConstruct
     public void initializeBean() throws Exception {
-        url = config.getSource().getTvheadendurl() + "/stream/channel/" + channelName;
+        url = channel.getSources().get(0).getUrl();
         buffer = new byte[config.getBuffers().getChunkSize()];
         webInputStream = new WebInputStream(new URL(url), config.getSource().getReconnectTimeout());
         multiplexerOutputStream = new BroadcastCircularBufferedOutputStream(config.getBuffers().getBroadcastBufferSize());
@@ -75,9 +77,9 @@ public class HttpDownloaderTask implements IMultiplexerStreamer {
         return url;
     }
 
-    public synchronized String getChannelName() {
-        return channelName;
-    }
+/*    public synchronized String getChannelName() {
+        return channel.getId();
+    }*/
 
     @Override
     public void terminate() {
@@ -160,7 +162,7 @@ public class HttpDownloaderTask implements IMultiplexerStreamer {
 
     @Override
     public String getIdentifier() {
-        return channelName;
+        return channel.getId();
     }
 
     @Override

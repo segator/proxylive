@@ -25,32 +25,28 @@ package com.github.segator.proxylive.controller;
 
 import com.github.segator.proxylive.ProxyLiveConstants;
 import com.github.segator.proxylive.ProxyLiveUtils;
+import com.github.segator.proxylive.entity.Channel;
+import com.github.segator.proxylive.entity.ChannelCategory;
 import com.github.segator.proxylive.entity.ClientInfo;
 import com.github.segator.proxylive.processor.DirectHLSTranscoderStreamProcessor;
 import com.github.segator.proxylive.processor.IStreamMultiplexerProcessor;
-import com.github.segator.proxylive.stream.BroadcastCircularBufferedOutputStream;
-import com.github.segator.proxylive.stream.WithoutBlockingInputStream;
+import com.github.segator.proxylive.service.ChannelService;
+import com.github.segator.proxylive.service.EPGService;
+import com.github.segator.proxylive.service.TokensService;
 import com.github.segator.proxylive.tasks.StreamProcessorsSession;
 
 import java.io.*;
-import javax.annotation.PostConstruct;
-import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import com.github.segator.proxylive.config.ProxyLiveConfiguration;
-import com.github.segator.proxylive.processor.HLSStreamProcessor;
 import com.github.segator.proxylive.processor.IHLSStreamProcessor;
 import com.github.segator.proxylive.service.AuthenticationService;
 
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.ProtocolException;
-import java.net.URISyntaxException;
-import java.net.URL;
+import java.net.*;
 import java.rmi.RemoteException;
-import java.util.Base64;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
+import java.util.regex.Pattern;
+
 import org.apache.commons.io.IOUtils;
 import static org.hibernate.validator.internal.util.CollectionHelper.newArrayList;
 import org.json.simple.JSONArray;
@@ -59,9 +55,12 @@ import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -83,24 +82,25 @@ public class StreamController {
     private ProxyLiveConfiguration config;
     @Autowired
     private AuthenticationService authService;
+    @Autowired
+    private ChannelService channelService;
+    @Autowired
+    private EPGService epgService;
+
+    @Autowired
+    private TokensService tokenService;
 
     @Autowired
     private StreamProcessorsSession streamProcessorsSession;
 
-    private long lastChannelListUpdated = 0;
-    private JSONArray cachedChannelList;
-    private JSONArray cachedChannelTags;
 
-    private String internalToken;
+
 
     private boolean userValidation(HttpServletRequest request,HttpServletResponse response) throws Exception {
         MultiValueMap<String, String> parameters = UriComponentsBuilder.fromUriString(ProxyLiveUtils.getURL(request)).build().getQueryParams();
-        String internalConnection = parameters.getFirst("internalToken");
-        if(internalConnection==null || !internalConnection.equals(config.getInternalToken())) {
-            /*if(parameters.getFirst("user")==null ||  parameters.getFirst("pass") == null){
-                response.setStatus(HttpStatus.UNAUTHORIZED.value());
-                return false;
-            }*/
+        String token = parameters.getFirst("token");
+
+        if(token==null || tokenService.getTokenByID(token)==null) {
             Boolean userLoggedResult = streamProcessorsSession.isUserLogged(parameters.getFirst("user"));
 
             if(userLoggedResult==null || !userLoggedResult) {
@@ -116,20 +116,22 @@ public class StreamController {
         return true;
     }
 
-    @RequestMapping(value = "/view/{profile}/{channel}",method=RequestMethod.GET)
-    public void dispatchStream(@PathVariable("profile") String profile, @PathVariable("channel") String channel,
+    @RequestMapping(value = "/view/{profile}/{channelID}",method=RequestMethod.GET)
+    public void dispatchStream(@PathVariable("profile") String profile, @PathVariable("channelID") String channelID,
             HttpServletRequest request, HttpServletResponse response) throws Exception {
 
         if(!userValidation(request,response)){
             return;
         }
-        JSONObject channelInfo = getChannelData(channel);
-        if (!isChannelAllowed(getAllowedTags(null, null, null), channelInfo)) {
-            response.setStatus(HttpStatus.UNAUTHORIZED.value());
+        if(channelID.contains("?")){
+            channelID=channelID.split(Pattern.quote("?"))[0];
+        }
+        Channel channel = channelService.getChannelByID(channelID);
+        if(channel==null){
+            response.setStatus(404);
             return;
         }
-
-        IStreamMultiplexerProcessor iStreamProcessor = (IStreamMultiplexerProcessor) context.getBean("StreamProcessor", ProxyLiveConstants.STREAM_MODE, channelInfo.get("name"), channel, profile);
+        IStreamMultiplexerProcessor iStreamProcessor = (IStreamMultiplexerProcessor) context.getBean("StreamProcessor", ProxyLiveConstants.STREAM_MODE, channel.getName(), channel, profile);
         ClientInfo client = streamProcessorsSession.manage(iStreamProcessor, request);
 
         System.out.println("require connection from : " + client);
@@ -194,51 +196,36 @@ public class StreamController {
                 + "</cross-domain-policy>";
     }
 
-    @RequestMapping(value = "icon/{iconID}", method = RequestMethod.GET)
-    public void getIcon(@PathVariable("iconID") String iconPath, HttpServletResponse response) throws IOException {
-        HttpURLConnection connection = getURLConnection("imagecache/" + iconPath);
-        if (connection.getResponseCode() != 200) {
-            response.setStatus(connection.getResponseCode());
-            return;
-        }
-        response.setStatus(HttpStatus.OK.value());
-        InputStream iconStream = connection.getInputStream();
-        //response.setHeader(file, file);
-        byte[] buffer = new byte[1024];
-        OutputStream output = response.getOutputStream();
-        int len = 0;
-        try {
-            while ((len = iconStream.read(buffer)) != -1) {
-                output.write(buffer, 0, len);
-            }
-        } catch (Exception ex) {
 
-        } finally {
-            try {
-                output.close();
-            } catch (Exception ex2) {
-            }
-            try {
-                iconStream.close();
-            } catch (Exception ex2) {
-            }
-            connection.disconnect();
-        }
-    }
 
-    @RequestMapping(value = "epg", method = RequestMethod.GET)
-    public void readEPG(HttpServletResponse response) throws IOException {
-        HttpURLConnection connection = getURLConnection("xmltv/channels");
-        if (connection.getResponseCode() != 200) {
-            response.setStatus(connection.getResponseCode());
-            return;
+    @RequestMapping(value = "epg", method = {RequestMethod.GET,RequestMethod.HEAD})
+    public ResponseEntity<Resource> readEPG(HttpServletRequest request) throws IOException {
+        String fileName="xmltv.xml";
+        Enumeration headerNames = request.getHeaderNames();
+        while(headerNames.hasMoreElements()) {
+            String headerName = (String)headerNames.nextElement();
+            System.out.println("" + headerName + ":" + request.getHeader(headerName));
+
         }
-        response.setHeader("Content-Disposition", "attachment; filename=xmltv.xml");
-        response.setStatus(HttpStatus.OK.value());
-        IOUtils.copy(connection.getInputStream(), response.getOutputStream());
-        response.getOutputStream().close();
-        connection.getInputStream().close();
-        connection.disconnect();
+
+        File epgFile = epgService.getEPG();
+        Resource resource = new UrlResource(epgFile.toPath().toUri());
+
+        // Try to determine file's content type
+        String contentType = null;
+        contentType = request.getServletContext().getMimeType(fileName);
+
+        // Fallback to the default content type if type could not be determined
+        if(contentType == null) {
+            contentType = "application/octet-stream";
+        }
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(contentType))
+                .contentLength(epgFile.length())
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")
+                .lastModified(epgFile.lastModified())
+                .body(resource);
     }
 
     @RequestMapping(value = "channel/list/{format:^mpeg|hls$}/{profile}", method = RequestMethod.GET)
@@ -252,87 +239,81 @@ public class StreamController {
         response.setHeader("Access-Control-Allow-Origin", "*");
         response.setStatus(HttpStatus.OK.value());
         StringBuffer buffer = new StringBuffer();
-        String requestBaseURL = String.format("%s://%s:%s", request.getScheme(), request.getServerName(), request.getServerPort());
-        if (config.getEndpoint() != null) {
-            requestBaseURL = config.getEndpoint();
-        }
-        JSONArray channels = getTvheadendChannels();
-
-        List<String> userAllowedTags = getAllowedTags(null, null, null);
-
-        buffer.append("#EXTM3U").append(" cache=2000 url-tvg=\"").append(String.format("%s/epg", requestBaseURL)).append("\"").
-                append("x-tvg-url=\"").append(String.format("%s/epg", requestBaseURL)).append("\" tvg-shift=0\r\n\r\n");
-        for (Object ochannel : channels) {
-            JSONObject channel = (JSONObject) ochannel;
-            if (isChannelAllowed(userAllowedTags, channel)) {
-                buffer.append("#EXTINF:-1 tvg-logo=\"").append(String.format("%s/icon/%s", requestBaseURL, channel.get("icon_public_url").toString().split("/")[1])).
-                        append("\" tvg-name=\"").append(channel.get("name")).append("\" type=").append(format).append(",").
-                        append(String.format("%s", channel.get("name"))).append("\r\n");
-                if (format.equals("mpeg")) {
-                    buffer.append(String.format("%s/view/%s/%s", requestBaseURL, profile, channel.get("uuid"))).append("?user=").append(parameters.getFirst("user")).append("&pass=").append(parameters.getFirst("pass")).append("\r\n");
-                } else if (format.equals("hls")) {
-                    buffer.append(String.format("%s/view/%s/%s", requestBaseURL, profile, channel.get("uuid"))).append("/playlist.m3u8").append("?user=").append(parameters.getFirst("user")).append("&pass=").append(parameters.getFirst("pass")).append("\r\n");
-                }
-            } else {
-                System.out.println("not enabled:" + channel);
+        String requestBaseURL = ProxyLiveUtils.getBaseURL(request);
+        List<Channel> channelsOrdered = new ArrayList(channelService.getChannelList());
+        channelsOrdered.sort(new Comparator<Channel>() {
+            @Override
+            public int compare(Channel o1, Channel o2) {
+                return o1.getNumber().compareTo(o2.getNumber());
             }
+        });
+        String EPGURL = String.format("%s/epg", requestBaseURL);
+
+        buffer.append(String.format("#EXTM3U cache=2000 url-tvg=\"%s\" x-tvg-url=\"%s\" tvg-shift=0\r\n\r\n",EPGURL,EPGURL));
+
+        for (Channel channel : channelsOrdered) {
+            Set<String> categories= new HashSet<>();
+            for (ChannelCategory channelCategory: channel.getCategories()) {
+                categories.add(channelCategory.getName());
+            }
+            String categoriesString = String.join(";",categories);
+            String logoURL=channel.getLogoURL();
+            if(channel.getLogoURL()==null){
+                logoURL = String.format("%s/channel/%s/icon",requestBaseURL,channel.getId());
+            }
+
+            String channelURL=String.format("%s/view/%s/%s", requestBaseURL, profile, channel.getId());
+            if(format.equals("hls")){
+                channelURL=channelURL+"/playlist.m3u8";
+            }
+            channelURL=String.format("%s?user=%s&pass=%s",channelURL,parameters.getFirst("user"),parameters.getFirst("pass"));
+
+            buffer.append(String.format("#EXTINF:-1 tvg-chno=\"%d\" tvg-logo=\"%s\" group-title=\"%s\" tvg-id=\"%s\" tvg-name=\"%s\" type=\"%s\",%s\r\n%s\r\n",
+                    channel.getNumber(),logoURL,categoriesString,channel.getId(),channel.getName(),format,channel.getName(),channelURL));
         }
         return buffer.toString();
     }
 
-    private boolean isChannelAllowed(List<String> userAllowedTags, JSONObject channel) {
-        return (Boolean) channel.get("enabled") && ((JSONArray) channel.get("tags")).stream().anyMatch(tag -> userAllowedTags.stream().anyMatch(validTag -> validTag.equals(tag)));
-    }
+    @RequestMapping(value = "channel/{channelID}/icon", method = {RequestMethod.GET,RequestMethod.HEAD})
+    public ResponseEntity<Resource> downloadIcon(HttpServletRequest request,@PathVariable("channelID") String channelID) throws Exception {
+        Channel channel = channelService.getChannelByID(channelID);
+        if(channel!=null && channel.getLogoFile()!=null){
+            Resource resource = new UrlResource(channel.getLogoFile().toPath().toUri());
+            String contentType = null;
+            contentType = request.getServletContext().getMimeType(channel.getLogoFile().getName());
 
-    private List<String> getAllowedTags(String user, String pass, List<String> groups) throws ProtocolException, IOException, MalformedURLException, ParseException {
-        JSONArray tags = getTvheadendTags();
-        List<String> validsTags = newArrayList();
-        for (Object otag : tags) {
-            JSONObject tag = (JSONObject) otag;
-            tag.get("val");
-            validsTags.add(tag.get("key").toString());
+            // Fallback to the default content type if type could not be determined
+            if(contentType == null) {
+                contentType = "application/octet-stream";
+            }
+            return ResponseEntity.ok()
+                    .contentType(MediaType.parseMediaType(contentType))
+                    .contentLength(channel.getLogoFile().length())
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + channel.getLogoFile().getName() + "\"")
+                    .lastModified(channel.getLogoFile().lastModified())
+                    .body(resource);
+        }else{
+            return ResponseEntity.notFound().build();
         }
-        return validsTags;
     }
 
-    private HttpURLConnection getURLConnection(String request) throws MalformedURLException, IOException {
-        URL tvheadendURL = new URL(config.getSource().getTvheadendurl() + "/" + request);
-        HttpURLConnection connection = (HttpURLConnection) tvheadendURL.openConnection();
-        connection.setReadTimeout(10000);
-        if (tvheadendURL.getUserInfo() != null) {
-            String basicAuth = "Basic " + new String(Base64.getEncoder().encode(tvheadendURL.getUserInfo().getBytes()));
-            connection.setRequestProperty("Authorization", basicAuth);
-        }
-        connection.setRequestMethod("GET");
-        connection.connect();
-        return connection;
-    }
 
-    private JSONObject getTvheadendResponse(String request) throws MalformedURLException, ProtocolException, IOException, ParseException {
-        JSONParser jsonParser = new JSONParser();
-        HttpURLConnection connection = getURLConnection(request);
-        if (connection.getResponseCode() != 200) {
-            throw new IOException("Error on open stream:" + request);
-        }
-        JSONObject returnObject = (JSONObject) jsonParser.parse(new InputStreamReader(connection.getInputStream(), "UTF-8"));
-        connection.disconnect();
-        return returnObject;
 
-    }
-
-    @RequestMapping(value = "/view/{profile}/{channel}/{file:^(?i)playlist.m3u8|dummy\\d*.ts|playlist\\d*.ts$}", method = RequestMethod.HEAD)
-    public void hola(HttpServletRequest request){
-        System.out.println(UriComponentsBuilder.fromUriString(ProxyLiveUtils.getURL(request)).build().getQuery());
-    }
-    @RequestMapping(value = "/view/{profile}/{channel}/{file:^(?i)playlist.m3u8|dummy\\d*.ts|playlist\\d*.ts$}", method = RequestMethod.GET)
-    public void dispatchHLS(@PathVariable("profile") String profile, @PathVariable("channel") String channel,
+    @RequestMapping(value = "/view/{profile}/{channelID}/{file:^(?i)playlist.m3u8|dummy\\d*.ts|playlist\\d*.ts$}", method = RequestMethod.GET)
+    public void dispatchHLS(@PathVariable("profile") String profile, @PathVariable("channelID") String channelID,
             @PathVariable String file, HttpServletRequest request, HttpServletResponse response) throws Exception {
         long now = new Date().getTime();
         if(!userValidation(request,response)){
             return;
         }
         String clientIdentifier = ProxyLiveUtils.getRequestIP(request) + ProxyLiveUtils.getBrowserInfo(request);
-        DirectHLSTranscoderStreamProcessor hlsStreamProcessor = streamProcessorsSession.getHLSStream(ProxyLiveUtils.getRequestIP(request), channel, profile);
+        Channel channel = channelService.getChannelByID(channelID);
+        if(channel==null){
+            response.setStatus(404);
+            return;
+        }
+
+        DirectHLSTranscoderStreamProcessor hlsStreamProcessor = streamProcessorsSession.getHLSStream(ProxyLiveUtils.getRequestIP(request), channel.getId(), profile);
         if (hlsStreamProcessor == null) {
             hlsStreamProcessor = (DirectHLSTranscoderStreamProcessor) context.getBean("StreamProcessor", ProxyLiveConstants.HLS_MODE, clientIdentifier, channel, profile);
             hlsStreamProcessor.start();
@@ -461,10 +442,6 @@ public class StreamController {
                 StringBuilder playlistEdit = new StringBuilder();
                 BufferedReader reader = new BufferedReader(new InputStreamReader(downloadFile));
                 String currentURL =ProxyLiveUtils.getURL(request);
-                if (config.getEndpoint() != null) {
-                    String baseURL= config.getEndpoint();
-                    currentURL = baseURL + currentURL.substring(currentURL.indexOf("/",7));
-                }
                 while(reader.ready()) {
                     String line = reader.readLine();
                     if(line.endsWith(".ts")){
@@ -478,16 +455,11 @@ public class StreamController {
             }
             fileSize = Long.valueOf(downloadFile.available());
         } else {
-            do {
-                downloadFile = hlsStreamProcessor.getSegment(file);
+            downloadFile = hlsStreamProcessor.getSegment(file);
 
-                if (downloadFile == null) {
-                    Thread.sleep(100);
-                }
-                if ((new Date().getTime() - now) > config.getFfmpeg().getHls().getTimeout()*1000) {
-                    return null;
-                }
-            } while (downloadFile == null);
+            if (downloadFile == null) {
+                return null;
+            }
             fileSize = hlsStreamProcessor.getSegmentSize(file);
         }
         respHeaders.setHeader("Connection", "close");//keep-alive
@@ -499,31 +471,5 @@ public class StreamController {
         return downloadFile;
     }
 
-    private JSONArray getTvheadendChannels() throws ProtocolException, IOException, MalformedURLException, ParseException {
-        getTvheadendData();
-        return cachedChannelList;
-    }
 
-    private JSONArray getTvheadendTags() throws ProtocolException, IOException, MalformedURLException, ParseException {
-        getTvheadendData();
-        return cachedChannelTags;
-    }
-
-    private void getTvheadendData() throws ProtocolException, IOException, MalformedURLException, ParseException {
-        if (lastChannelListUpdated + (config.getSource().getChannelListCacheTime() * 1000) < new Date().getTime()) {
-            cachedChannelList = (JSONArray) getTvheadendResponse("api/channel/grid?start=0&limit=5000").get("entries");
-            cachedChannelTags = (JSONArray) getTvheadendResponse("api/channeltag/list").get("entries");
-            lastChannelListUpdated = new Date().getTime();
-        }
-    }
-
-    private JSONObject getChannelData(String channel) throws Exception {
-        for (Object ochannel : getTvheadendChannels()) {
-            JSONObject channelObject = (JSONObject) ochannel;
-            if (channelObject.get("uuid").equals(channel)) {
-                return channelObject;
-            }
-        }
-        throw new RemoteException("channel no exist");
-    }
 }

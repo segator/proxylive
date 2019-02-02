@@ -24,27 +24,18 @@
 package com.github.segator.proxylive.controller;
 
 import com.github.segator.proxylive.ProxyLiveUtils;
-import com.github.segator.proxylive.entity.ClientInfo;
-import com.github.segator.proxylive.entity.JSONClientInfo;
-import com.github.segator.proxylive.entity.JSONResponse;
-import com.github.segator.proxylive.entity.JSONTask;
+import com.github.segator.proxylive.entity.*;
 import com.github.segator.proxylive.processor.IStreamProcessor;
+import com.github.segator.proxylive.service.TokensService;
 import com.github.segator.proxylive.tasks.IStreamTask;
 import com.github.segator.proxylive.tasks.ProcessorTasks;
 import com.github.segator.proxylive.tasks.StreamProcessorsSession;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 
 /**
  *
@@ -57,6 +48,8 @@ public class WSController {
     private ProcessorTasks tasksProcessor;
     @Autowired
     private StreamProcessorsSession streamProcessorsSession;
+    @Autowired
+    private TokensService tokenService;
 
     @RequestMapping(value = "/ws/getTasks", produces = "application/json")
     public @ResponseBody
@@ -116,6 +109,41 @@ public class WSController {
             }
         }
     }
+
+    @RequestMapping(value = "/ws/token", produces = "application/json",method = RequestMethod.GET)
+    public @ResponseBody
+    List<AuthToken> getTokenList() throws IOException {
+        return tokenService.getAllTokens();
+    }
+
+    @RequestMapping(value = "/ws/token/{tokenID}", produces = "application/json",method = RequestMethod.DELETE)
+    public @ResponseBody void  deleteToken(@PathVariable("tokenID") String tokenID) throws IOException {
+        tokenService.deleteTokenByID(tokenID);
+    }
+
+    @RequestMapping(value = "/ws/token/", produces = "application/json",method = RequestMethod.PUT)
+    public @ResponseBody void  addToken(@RequestBody Map<String,Object> payload) throws Exception {
+        String expiration = (String)payload.get("expiration");
+        Calendar nowCalendar = Calendar.getInstance();
+        int typeOfAdd=Calendar.DATE;
+        String unitType = expiration.substring(expiration.length()-1,expiration.length()).toLowerCase();
+        switch(unitType){
+            case "d":
+                typeOfAdd = Calendar.DATE;
+                break;
+            case "m":
+                typeOfAdd = Calendar.MONTH;
+                break;
+            case "h":
+                typeOfAdd = Calendar.HOUR_OF_DAY;
+                break;
+        }
+        nowCalendar.add(typeOfAdd,new Integer(expiration.substring(0,expiration.length()-1)));
+
+        tokenService.addTokenByID(new AuthToken((String)payload.get("user"),(String)payload.get("id"),nowCalendar.getTime()));
+
+    }
+
 
     private Collection<? extends JSONTask> createJSONTask(Map<Thread, IStreamTask> operationMap) {
         List<JSONTask> jsonTasks = new ArrayList();

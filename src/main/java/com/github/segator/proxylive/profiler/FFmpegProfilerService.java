@@ -28,6 +28,9 @@ import com.github.segator.proxylive.config.ProxyLiveConfiguration;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
 /**
  *
  * @author Isaac Aymerich <isaac.aymerich@gmail.com>
@@ -51,8 +54,8 @@ public class FFmpegProfilerService {
         return getProfile(profile).getParameters();
     }
 
-    public String getHLSTemporalPath(String taskIdentifier) {        
-        return config.getFfmpeg().getHls().getTempPath() + taskIdentifier.replace(":", "_") + "/";
+    public Path getHLSTemporalPath(String taskIdentifier) {
+        return Paths.get(config.getFfmpeg().getHls().getTempPath(),taskIdentifier.replace(":", "_"));
     }
 
     public String getSegmentFormat() {
@@ -79,8 +82,8 @@ public class FFmpegProfilerService {
     }
 
     public String getHLSParameters(String taskIdentifier) {
-        String tempFolder = getHLSTemporalPath(taskIdentifier);
-        return config.getFfmpeg().getHls().getParameters() + " " + tempFolder + "playlist.m3u8";
+        Path tempFolder = getHLSTemporalPath(taskIdentifier);
+        return config.getFfmpeg().getHls().getParameters() + " " + tempFolder.toString() + "/playlist.m3u8";
     }
 
     public String getFFMpegExecutable() {

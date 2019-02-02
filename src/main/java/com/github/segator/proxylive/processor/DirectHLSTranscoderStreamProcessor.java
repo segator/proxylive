@@ -1,5 +1,6 @@
 package com.github.segator.proxylive.processor;
 
+import com.github.segator.proxylive.entity.Channel;
 import com.github.segator.proxylive.stream.ClientBroadcastedInputStream;
 import com.github.segator.proxylive.tasks.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,16 +20,14 @@ public class DirectHLSTranscoderStreamProcessor implements IStreamProcessor, IHL
     private ApplicationContext context;
 
 
-    private final String channel;
+    private final Channel channel;
     private final String profile;
-    private final String identifier;
     private ClientBroadcastedInputStream pip;
     private HLSDirectTask hlsDirectTask;
 
-    public DirectHLSTranscoderStreamProcessor(String channel, String profile,String identifier) {
+    public DirectHLSTranscoderStreamProcessor(Channel channel, String profile) {
         this.channel = channel;
         this.profile = profile;
-        this.identifier = identifier;
     }
 
     @Override
@@ -44,7 +43,7 @@ public class DirectHLSTranscoderStreamProcessor implements IStreamProcessor, IHL
     }
 
     public String getChannel() {
-        return channel;
+        return channel.getId();
     }
 
     @Override
@@ -94,7 +93,7 @@ public class DirectHLSTranscoderStreamProcessor implements IStreamProcessor, IHL
 
     @Override
     public String getIdentifier() {
-        return identifier;
+        return channel.getName();
     }
 
     @Override
@@ -114,6 +113,6 @@ public class DirectHLSTranscoderStreamProcessor implements IStreamProcessor, IHL
 
     @Override
     public String toString() {
-        return "DirectHLSTranscoderStreamProcessor{" + "channel=" + channel + ", profile=" + profile + ", identifier=" + identifier + '}';
+        return "DirectHLSTranscoderStreamProcessor{" + "channel=" + channel + ", profile=" + profile + '}';
     }
 }

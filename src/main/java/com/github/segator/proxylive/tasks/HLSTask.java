@@ -37,6 +37,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -121,8 +122,8 @@ public class HLSTask implements IStreamTask {
             dateFormatter = new SimpleDateFormat(ffmpegProfilerService.getSegmentDate("SimpleDateFormat"));
             System.out.println("[" + getIdentifier() + "] Start HLS");
             hlsParameters = ffmpegProfilerService.getHLSParameters(getIdentifier());
-            String hlsTempPath = ffmpegProfilerService.getHLSTemporalPath(getIdentifier());
-            File tmpOutputHLSPath = new File(hlsTempPath);
+            Path hlsTempPath = ffmpegProfilerService.getHLSTemporalPath(getIdentifier());
+            File tmpOutputHLSPath = hlsTempPath.toFile();
             try {
                 FileUtils.deleteDirectory(tmpOutputHLSPath);
             } catch (Exception ex) {
@@ -339,8 +340,8 @@ public class HLSTask implements IStreamTask {
                 process.destroy();
             }
             try {
-                String hlsTempPath = ffmpegProfilerService.getHLSTemporalPath(getIdentifier());
-                File tmpOutputHLSPath = new File(hlsTempPath);
+                Path hlsTempPath = ffmpegProfilerService.getHLSTemporalPath(getIdentifier());
+                File tmpOutputHLSPath = hlsTempPath.toFile();
                 FileUtils.deleteDirectory(tmpOutputHLSPath);
             } catch (Exception ex) {
             }
@@ -387,7 +388,7 @@ public class HLSTask implements IStreamTask {
 //        }
 //    }
     private byte[] readPlayListDirect() throws IOException, URISyntaxException {
-        String playlistSt = ffmpegProfilerService.getHLSTemporalPath(getIdentifier()) + "playlist.m3u8";
+        String playlistSt = ffmpegProfilerService.getHLSTemporalPath(getIdentifier()) + File.separator +"playlist.m3u8";
         File playList = new File(playlistSt);
         if (playList.exists() && playList.length() > 0) {
             return Files.readAllBytes(Paths.get(playlistSt));

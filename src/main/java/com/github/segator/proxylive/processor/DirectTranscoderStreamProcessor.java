@@ -5,6 +5,7 @@
  */
 package com.github.segator.proxylive.processor;
 
+import com.github.segator.proxylive.entity.Channel;
 import com.github.segator.proxylive.stream.ClientBroadcastedInputStream;
 import com.github.segator.proxylive.tasks.DirectTranscodeTask;
 import com.github.segator.proxylive.tasks.IStreamTask;
@@ -26,16 +27,14 @@ public class DirectTranscoderStreamProcessor implements IStreamMultiplexerProces
     private ApplicationContext context;
 
 
-    private final String channel;
+    private final Channel channel;
     private final String profile;
-    private final String identifier;
     private ClientBroadcastedInputStream pip;
     private DirectTranscodeTask streamingDownloaderRunningTask;
 
-    public DirectTranscoderStreamProcessor(String channel, String profile,String identifier) {
+    public DirectTranscoderStreamProcessor(Channel channel, String profile) {
         this.channel = channel;
         this.profile = profile;
-        this.identifier = identifier;
     }
 
     @Override
@@ -53,7 +52,7 @@ public class DirectTranscoderStreamProcessor implements IStreamMultiplexerProces
     }
 
     public String getChannel() {
-        return channel;
+        return channel.getId();
     }
 
     @Override
@@ -129,12 +128,12 @@ public class DirectTranscoderStreamProcessor implements IStreamMultiplexerProces
 
     @Override
     public String getIdentifier() {
-        return identifier;
+        return channel.getName();
     }
 
     @Override
     public String toString() {
-        return "DirectTranscoderStreamProcessor{" + "channel=" + channel + ", profile=" + profile + ", identifier=" + identifier + '}';
+        return "DirectTranscoderStreamProcessor{" + "channel=" + channel + ", profile=" + profile + '}';
     }
     
     

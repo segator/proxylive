@@ -17,16 +17,17 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration
 public class AuthenticationServiceFactory {
-      @Autowired
-    private ProxyLiveConfiguration configuration;
+    @Autowired
+    private ProxyLiveConfiguration config;
+
     @Bean
     public AuthenticationService createAuthenticationService() {
-        if(configuration.getAuthentication()==null){
+        if(config.getAuthentication()==null){
             return new WithoutAuthenticationService();
         }
-        if(configuration.getAuthentication().getLdap()!=null){
+        if(config.getAuthentication().getLdap()!=null){
             return new LDAPAuthenticationService();
-        }else if(configuration.getAuthentication().getPlex()!=null){
+        }else if(config.getAuthentication().getPlex()!=null){
             return new PlexAuthenticationService();
         }else{
             return new WithoutAuthenticationService();

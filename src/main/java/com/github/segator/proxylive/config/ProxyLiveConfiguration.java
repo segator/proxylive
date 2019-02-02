@@ -42,7 +42,6 @@ public class ProxyLiveConfiguration {
     private FFMpegConfiguration ffmpeg;
     private HttpLiveSource source;
     private AuthenticationConfiguration authentication;
-    private String endpoint;
     private int streamTimeout;
     private boolean internalConnection;
     private String internalToken;
@@ -57,6 +56,18 @@ public class ProxyLiveConfiguration {
             builder.append(VALIDCHARS.charAt(character));
         }
         internalToken= builder.toString();
+
+        //If tvheadend input is set complete configuration
+        if(source.getTvheadendURL()!=null){
+            if( source.getEpg().getUrl()==null) {
+                source.getEpg().setUrl(source.getTvheadendURL() + "/xmltv/channels");
+            }
+            if(source.getChannels().getUrl()==null) {
+                source.getChannels().setUrl(source.getTvheadendURL());
+            }
+        }
+
+
     }
 
     public FFMpegConfiguration getFfmpeg() {
@@ -89,14 +100,6 @@ public class ProxyLiveConfiguration {
 
     public void setAuthentication(AuthenticationConfiguration authentication) {
         this.authentication = authentication;
-    }
-
-    public String getEndpoint() {
-        return endpoint;
-    }
-
-    public void setEndpoint(String endpoint) {
-        this.endpoint = endpoint;
     }
 
     public int getStreamTimeout() {

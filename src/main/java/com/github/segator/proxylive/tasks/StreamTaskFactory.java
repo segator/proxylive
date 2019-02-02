@@ -23,6 +23,7 @@
  */
 package com.github.segator.proxylive.tasks;
 
+import com.github.segator.proxylive.entity.Channel;
 import com.github.segator.proxylive.processor.IStreamMultiplexerProcessor;
 import java.io.IOException;
 import org.springframework.context.annotation.Bean;
@@ -38,26 +39,20 @@ public class StreamTaskFactory {
 
     @Bean
     @Scope(value = "prototype")
-    public HttpDownloaderTask HttpDownloaderTask(String channelName) throws IOException {
-        return new HttpDownloaderTask(channelName);
-
+    public HttpDownloaderTask HttpDownloaderTask(Channel channel) throws IOException {
+        return new HttpDownloaderTask(channel);
     }
+
     @Bean
     @Scope(value = "prototype")
-    public TranscodeTask TranscodeTask(IStreamMultiplexerProcessor iStreamProcessor, String profile) throws IOException {
-        return new TranscodeTask(iStreamProcessor,profile);
-
-    }
-    @Bean
-    @Scope(value = "prototype")
-    public DirectTranscodeTask DirectTranscodeTask(String channel, String profile) throws IOException {
+    public DirectTranscodeTask DirectTranscodeTask(Channel channel, String profile) throws IOException {
         return new DirectTranscodeTask(channel,profile);
 
     }
 
     @Bean
     @Scope(value = "prototype")
-    public HLSDirectTask HLSDirectTask(String channel, String profile) throws IOException {
+    public HLSDirectTask HLSDirectTask(Channel channel, String profile) throws IOException {
         return new HLSDirectTask(channel,profile);
 
     }

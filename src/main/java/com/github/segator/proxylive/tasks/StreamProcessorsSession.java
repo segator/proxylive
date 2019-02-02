@@ -26,13 +26,11 @@ package com.github.segator.proxylive.tasks;
 import com.github.segator.proxylive.ProxyLiveUtils;
 import com.github.segator.proxylive.entity.ClientInfo;
 import com.github.segator.proxylive.processor.DirectHLSTranscoderStreamProcessor;
-import com.github.segator.proxylive.processor.HLSStreamProcessor;
 import com.github.segator.proxylive.processor.IStreamProcessor;
 
 import java.util.*;
 import javax.servlet.http.HttpServletRequest;
 
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -107,7 +105,7 @@ public class StreamProcessorsSession {
         request.getQueryString();
         MultiValueMap<String, String> parameters = UriComponentsBuilder.fromUriString(ProxyLiveUtils.getURL(request)).build().getQueryParams();
         String clientUser = parameters.getFirst("user");
-        if (clientUser == null) {
+        if (clientUser == null || clientUser.trim().equals("null")) {
             clientUser = "guest";
         }
         client.setClientUser(clientUser);

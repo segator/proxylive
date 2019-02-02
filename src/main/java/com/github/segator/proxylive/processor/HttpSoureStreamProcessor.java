@@ -23,6 +23,7 @@
  */
 package com.github.segator.proxylive.processor;
 
+import com.github.segator.proxylive.entity.Channel;
 import com.github.segator.proxylive.tasks.HttpDownloaderTask;
 import com.github.segator.proxylive.stream.ClientBroadcastedInputStream;
 import com.github.segator.proxylive.tasks.IStreamTask;
@@ -44,14 +45,12 @@ public class HttpSoureStreamProcessor implements IStreamMultiplexerProcessor, IS
     private ApplicationContext context;
 
 
-    private final String channel;
-    private final String identifier;
+    private final Channel channel;
     private ClientBroadcastedInputStream pip;
     private HttpDownloaderTask streamingDownloaderRunningTask;
 
-    public HttpSoureStreamProcessor(String channel, String identifier) {
+    public HttpSoureStreamProcessor(Channel channel) {
         this.channel = channel;
-        this.identifier = identifier;
     }
 
     @Override
@@ -68,7 +67,7 @@ public class HttpSoureStreamProcessor implements IStreamMultiplexerProcessor, IS
     }
 
     public String getChannel() {
-        return channel;
+        return channel.getId();
     }
 
     @Override
@@ -144,11 +143,11 @@ public class HttpSoureStreamProcessor implements IStreamMultiplexerProcessor, IS
 
     @Override
     public String getIdentifier() {
-        return identifier;
+        return channel.getName();
     }
 
     @Override
     public String toString() {
-        return "HttpSoureStreamProcessor{" + "channel=" + channel + ", identifier=" + identifier + '}';
+        return "HttpSoureStreamProcessor{" + "channel=" + channel + '}';
     }
 }
