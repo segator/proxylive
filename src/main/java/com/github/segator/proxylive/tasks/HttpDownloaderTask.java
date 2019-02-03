@@ -24,6 +24,7 @@
 package com.github.segator.proxylive.tasks;
 
 import com.github.segator.proxylive.entity.Channel;
+import com.github.segator.proxylive.entity.ChannelSource;
 import com.github.segator.proxylive.processor.IStreamProcessor;
 import com.github.segator.proxylive.stream.BroadcastCircularBufferedOutputStream;
 import com.github.segator.proxylive.stream.WebInputStream;
@@ -35,6 +36,7 @@ import java.util.Objects;
 import java.util.regex.Pattern;
 import javax.annotation.PostConstruct;
 import com.github.segator.proxylive.config.ProxyLiveConfiguration;
+import com.github.segator.proxylive.stream.WithoutBlockingInputStream;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -52,6 +54,7 @@ public class HttpDownloaderTask implements IMultiplexerStreamer {
     private boolean crashed = false;
     private int crashTimes = 0;
     private byte[] buffer;
+    private int sourcePriority;
     @Autowired
     private ProxyLiveConfiguration config;
 
@@ -62,9 +65,9 @@ public class HttpDownloaderTask implements IMultiplexerStreamer {
 
     @PostConstruct
     public void initializeBean() throws Exception {
-        url = channel.getSources().get(0).getUrl();
+        sourcePriority=1;
+        url = channel.getSourceByPriority(sourcePriority).getUrl();
         buffer = new byte[config.getBuffers().getChunkSize()];
-        webInputStream = new WebInputStream(new URL(url), config.getSource().getReconnectTimeout());
         multiplexerOutputStream = new BroadcastCircularBufferedOutputStream(config.getBuffers().getBroadcastBufferSize());
     }
 
@@ -97,24 +100,42 @@ public class HttpDownloaderTask implements IMultiplexerStreamer {
         runDate = new Date();
         int len;
         try {
+
+            webInputStream = new WebInputStream(new URL(url));
             System.out.println("[" + getIdentifier() + "] Start Http stream");
             if (webInputStream.connect()) {
-                //videoTranscodedStream.start();
+                crashTimes=0;
+                long lastReaded  = new Date().getTime();
                 while (!terminate) {
                     len = webInputStream.read(buffer);
                     if (len > 0) {
                         multiplexerOutputStream.write(buffer, 0, len);
+                        lastReaded  = new Date().getTime();
+                    }else if((new Date().getTime() - lastReaded)  > config.getSource().getReconnectTimeout()*1000) {
+                        throw new Exception(String.format("no data received on %d seconds",config.getSource().getReconnectTimeout()));
+                    }else{
+                        Thread.sleep(10);
                     }
                 }
+            }else{
+                throw new Exception ("Imposible to connect to:"+url);
             }
             System.out.println("[" + getIdentifier() + "]Required Http stream terminated");
         } catch (Exception ex) {
-            ex.printStackTrace();
+            System.out.println(ex.getMessage());
             crashTimes++;
             if (crashTimes > 10 || terminate) {
                 crashed = true;
             } else {
                 closeWebStream();
+                //If exist more sources try another
+                sourcePriority++;
+                ChannelSource channelSource = channel.getSourceByPriority(sourcePriority);
+                if(channelSource==null){
+                    sourcePriority=1;
+                    channelSource = channel.getSourceByPriority(sourcePriority);
+                }
+                url = channelSource.getUrl();
                 run();
             }
         } finally {

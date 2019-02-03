@@ -3,6 +3,7 @@ package com.github.segator.proxylive.entity;
 import java.io.File;
 import java.net.URL;
 import java.util.List;
+import java.util.Optional;
 
 public class Channel {
     private Integer number;
@@ -64,6 +65,16 @@ public class Channel {
 
     public List<ChannelSource> getSources() {
         return sources;
+    }
+
+    public ChannelSource getSourceByPriority(int priority){
+        Optional<ChannelSource> optionalFind = getSources().stream().filter(s -> s.getPriority()==priority).findFirst();
+        if(optionalFind.isPresent()){
+            return optionalFind.get();
+        }else{
+            return null;
+        }
+
     }
 
     public void setSources(List<ChannelSource> sources) {

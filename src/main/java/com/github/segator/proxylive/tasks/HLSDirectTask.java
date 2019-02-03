@@ -96,12 +96,7 @@ public class HLSDirectTask implements IStreamTask {
 
     @PostConstruct
     public void initializeBean() {
-
-        if(config.isInternalConnection()){
-            url = "http://localhost:"+serverPort+"/view/"+profile+"/" + channel.getId()+"?user=internal&token="+config.getInternalToken();
-        }else {
-            url = channel.getSources().get(0).getUrl();
-        }
+        url = "http://localhost:"+serverPort+"/view/"+profile+"/" + channel.getId()+"?user=internal&token="+config.getInternalToken();
     }
     @Override
     public String toString() {
@@ -143,13 +138,7 @@ public class HLSDirectTask implements IStreamTask {
             dateFormatter = new SimpleDateFormat(ffmpegProfilerService.getSegmentDate("SimpleDateFormat"));
             System.out.println("[" + getIdentifier() + "] Start HLS");
             hlsParameters = ffmpegProfilerService.getHLSParameters(getIdentifier());
-
-            //If is not internal COnnnection we arre not going to reuse transcoded  streams so we need to add to ffmpeg transcoding parameters.
-            if(config.isInternalConnection()){
-                transcodeParameters = " -c:a copy -c:v copy ";
-            }else{
-                transcodeParameters = ffmpegProfilerService.getTranscodeParameters(profile);
-            }
+            transcodeParameters = " -c:a copy -c:v copy ";
 
             Path hlsTempPath = ffmpegProfilerService.getHLSTemporalPath(getIdentifier());
             File tmpOutputHLSPath = hlsTempPath.toFile();

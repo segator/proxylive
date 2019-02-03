@@ -9,10 +9,10 @@ import org.springframework.context.annotation.Configuration;
 public class ChannelServiceFactory {
 
     @Autowired
-    private ProxyLiveConfiguration configuration;
+    private ProxyLiveConfiguration config;
     @Bean
     public ChannelService createChannelService() {
-        switch(configuration.getSource().getChannels().getType()){
+        switch(config.getSource().getChannels().getType()){
             case "tvheadend":
                 return new ChannelTVHeadendService();
             case "json":

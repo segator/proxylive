@@ -38,7 +38,7 @@ public class ChannelTVHeadendService implements ChannelService {
     @Autowired
     private ProxyLiveConfiguration config;
 
-    private long lastChannelListUpdated = 0;
+
     private JSONArray cachedChannelList;
     private JSONArray cachedChannelTags;
     private List<Channel> channels;
@@ -96,7 +96,6 @@ public class ChannelTVHeadendService implements ChannelService {
             for (Object oCategory:categories) {
                 String category =(String)oCategory;
                 ChannelCategory categoryObject = new ChannelCategory();
-                categoryObject.setId(category);
                 categoryObject.setName(getCategoryName(cachedChannelTags,category));
                 categoriesNames.add(categoryObject);
             }

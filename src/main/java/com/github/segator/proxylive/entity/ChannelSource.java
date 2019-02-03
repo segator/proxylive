@@ -4,6 +4,9 @@ public class ChannelSource {
     private String url;
     private int priority;
 
+    public ChannelSource(){
+
+    }
     public ChannelSource(int priorty, String url) {
         this.priority=priorty;
         this.url=url;

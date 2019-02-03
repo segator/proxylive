@@ -38,15 +38,12 @@ import java.util.Date;
 public class WebInputStream extends InputStream {
 
     private final URL url;
-    private final int minSecondsBetweenReconnects;
     private HttpURLConnection connection;
     private InputStream httpInputStream;
-    private long lastConnectionTry;
 
-    public WebInputStream(URL url, int minSecondsBetweenReconnects) throws MalformedURLException, IOException {
+    public WebInputStream(URL url) throws MalformedURLException, IOException {
         this.url = url;
-        this.lastConnectionTry = 0;
-        this.minSecondsBetweenReconnects = minSecondsBetweenReconnects;
+
     }
 
     private synchronized void initializeConnection() throws IOException {
@@ -65,8 +62,7 @@ public class WebInputStream extends InputStream {
         connection.connect();
         boolean connected = connection.getResponseCode() == 200 || connection.getResponseCode() == 204;
         System.out.println("response code of " + url.toString() + " is " + connection.getResponseCode());
-        httpInputStream = connection.getInputStream();
-        lastConnectionTry = new Date().getTime();
+        httpInputStream = new WithoutBlockingInputStream(connection.getInputStream());
         return connected;
     }
 
@@ -76,30 +72,12 @@ public class WebInputStream extends InputStream {
 
     @Override
     public int read() throws IOException {
-        try {
-            if (isConnected()) {
-                return httpInputStream.read();
-            } else if (reconnect()) {
-                return read();
-            }
-        } catch (Exception ex) {
-            httpInputStream = null;
-        }
-        return -1;
+        return httpInputStream.read();
     }
 
     @Override
     public int read(byte b[]) throws IOException {
-        try {
-            if (isConnected()) {
-                return httpInputStream.read(b);
-            } else if (reconnect()) {
-                return read(b);
-            }
-        } catch (Exception ex) {
-            httpInputStream = null;
-        }
-        return 0;
+        return httpInputStream.read(b);
     }
 
     public void close() throws IOException {
@@ -109,28 +87,4 @@ public class WebInputStream extends InputStream {
             throw new IOException("The Stream of " + url.toString() + " is not connected");
         }
     }
-
-    private synchronized boolean reconnect() throws IOException {
-        int secondsFromLastConnect = (int) ((new Date().getTime() - lastConnectionTry) / 1000);
-        if (secondsFromLastConnect > minSecondsBetweenReconnects) {
-            System.out.println("Reconnecting " + url.toString());
-            try {
-                httpInputStream.close();
-            } catch (Exception ex) {
-            }
-            try {
-                connection.disconnect();
-            } catch (Exception ex) {
-            }
-            lastConnectionTry = new Date().getTime();
-            return connect();
-        } else {
-            return false;
-        }
-    }
-
-    public long getLastConnection() {
-        return lastConnectionTry;
-    }
-    
 }

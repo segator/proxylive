@@ -113,14 +113,6 @@ public class ProxyLiveConfiguration {
         this.streamTimeout = streamTimeout;
     }
 
-    public boolean isInternalConnection() {
-        return internalConnection;
-    }
-
-    public void setInternalConnection(boolean internalConnection) {
-        this.internalConnection = internalConnection;
-    }
-
     public String getInternalToken() {
         return internalToken;
     }

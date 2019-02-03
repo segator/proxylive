@@ -61,11 +61,7 @@ public class DirectTranscodeTask implements IMultiplexerStreamer {
 
     @PostConstruct
     public void initializeBean() {
-        if(config.isInternalConnection()){
-            url = "http://localhost:"+serverPort+"/view/raw/" + channel.getId()+"?user=internal&token="+config.getInternalToken();
-        }else {
-            url =channel.getSources().get(0).getUrl();
-        }
+        url = "http://localhost:"+serverPort+"/view/raw/" + channel.getId()+"?user=internal&token="+config.getInternalToken();
         multiplexerOutputStream = new BroadcastCircularBufferedOutputStream(config.getBuffers().getBroadcastBufferSize());
 
     }
