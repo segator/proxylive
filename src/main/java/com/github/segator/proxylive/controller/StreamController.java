@@ -254,9 +254,9 @@ public class StreamController {
         for (Channel channel : channelsOrdered) {
             Set<String> categories= new HashSet<>();
             for (ChannelCategory channelCategory: channel.getCategories()) {
-                categories.add(channelCategory.getName());
+                categories.add(String.format(" group-title=\"%s\" ",channelCategory.getName());
             }
-            String categoriesString = String.join(";",categories);
+            String categoriesString = String.join(" ",categories);
             String logoURL=channel.getLogoURL();
             if(channel.getLogoURL()==null){
                 logoURL = String.format("%s/channel/%s/icon",requestBaseURL,channel.getId());
@@ -268,7 +268,7 @@ public class StreamController {
             }
             channelURL=String.format("%s?user=%s&pass=%s",channelURL,parameters.getFirst("user"),parameters.getFirst("pass"));
 
-            buffer.append(String.format("#EXTINF:-1 tvg-chno=\"%d\" tvg-logo=\"%s\" group-title=\"%s\" tvg-id=\"%s\" tvg-name=\"%s\" type=\"%s\",%s\r\n%s\r\n",
+            buffer.append(String.format("#EXTINF:-1 tvg-chno=\"%d\" tvg-logo=\"%s\" %s tvg-id=\"%s\" tvg-name=\"%s\" type=\"%s\",%s\r\n%s\r\n",
                     channel.getNumber(),logoURL,categoriesString,channel.getId(),channel.getName(),format,channel.getName(),channelURL));
         }
         return buffer.toString();
