@@ -201,12 +201,12 @@ public class StreamController {
     @RequestMapping(value = "epg", method = {RequestMethod.GET,RequestMethod.HEAD})
     public ResponseEntity<Resource> readEPG(HttpServletRequest request) throws IOException {
         String fileName="xmltv.xml";
-        Enumeration headerNames = request.getHeaderNames();
+        /*Enumeration headerNames = request.getHeaderNames();
         while(headerNames.hasMoreElements()) {
             String headerName = (String)headerNames.nextElement();
             System.out.println("" + headerName + ":" + request.getHeader(headerName));
 
-        }
+        }*/
 
         File epgFile = epgService.getEPG();
         Resource resource = new UrlResource(epgFile.toPath().toUri());
@@ -254,7 +254,7 @@ public class StreamController {
         for (Channel channel : channelsOrdered) {
             Set<String> categories= new HashSet<>();
             for (ChannelCategory channelCategory: channel.getCategories()) {
-                categories.add(String.format(" group-title=\"%s\" ",channelCategory.getName());
+                categories.add(String.format(" group-title=\"%s\" ",channelCategory.getName()));
             }
             String categoriesString = String.join(" ",categories);
             String logoURL=channel.getLogoURL();
