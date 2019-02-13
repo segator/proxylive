@@ -257,10 +257,17 @@ public class StreamController {
                 categories.add(String.format(" group-title=\"%s\" ",channelCategory.getName()));
             }
             String categoriesString = String.join(" ",categories);
-            String logoURL=channel.getLogoURL();
-            if(channel.getLogoURL()==null){
+            String logoURL="";
+            if(channel.getLogoURL()!=null){
+                logoURL=channel.getLogoURL();
+            }else if(channel.getLogoFile()!=null){
                 logoURL = String.format("%s/channel/%s/icon",requestBaseURL,channel.getId());
             }
+
+            if(logoURL!=null){
+                logoURL= String.format("tvg-logo=\"%s\"",logoURL);
+            }
+
 
             String channelURL=String.format("%s/view/%s/%s", requestBaseURL, profile, channel.getId());
             if(format.equals("hls")){
@@ -268,7 +275,7 @@ public class StreamController {
             }
             channelURL=String.format("%s?user=%s&pass=%s",channelURL,parameters.getFirst("user"),parameters.getFirst("pass"));
 
-            buffer.append(String.format("#EXTINF:-1 tvg-chno=\"%d\" tvg-logo=\"%s\" %s tvg-id=\"%s\" tvg-name=\"%s\" type=\"%s\",%s\r\n%s\r\n",
+            buffer.append(String.format("#EXTINF:-1 tvg-chno=\"%d\" %s %s tvg-id=\"%s\" tvg-name=\"%s\" type=\"%s\",%s\r\n%s\r\n",
                     channel.getNumber(),logoURL,categoriesString,channel.getId(),channel.getName(),format,channel.getName(),channelURL));
         }
         return buffer.toString();

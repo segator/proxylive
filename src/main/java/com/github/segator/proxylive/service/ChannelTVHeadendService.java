@@ -103,7 +103,7 @@ public class ChannelTVHeadendService implements ChannelService {
 
             HttpURLConnection connection = getURLConnection((String)channelObject.get("icon_public_url"));
             if (connection.getResponseCode() != 200 && connection.getResponseCode()!=404) {
-                throw new Exception("Error loading Picons");
+                throw new Exception("Error loading Picons error:"+connection.getResponseCode() + " "+ connection.getResponseMessage());
             }
 
             if(connection.getResponseCode()!=404) {
