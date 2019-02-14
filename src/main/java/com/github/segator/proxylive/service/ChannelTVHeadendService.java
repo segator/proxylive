@@ -102,11 +102,7 @@ public class ChannelTVHeadendService implements ChannelService {
             channel.setCategories(categoriesNames);
 
             HttpURLConnection connection = getURLConnection((String)channelObject.get("icon_public_url"));
-            if (connection.getResponseCode() != 200 && connection.getResponseCode()!=404) {
-                throw new Exception("Error loading Picons error:"+connection.getResponseCode() + " "+ connection.getResponseMessage());
-            }
-
-            if(connection.getResponseCode()!=404) {
+            if(connection.getResponseCode()!=404 && connection.getResponseCode() != 1) {
                 File logoFile = Paths.get(piconsPath.toString(),channel.getId()+".png").toFile();
                 channel.setLogoFile(logoFile);
                 FileOutputStream fos = new FileOutputStream(logoFile);
