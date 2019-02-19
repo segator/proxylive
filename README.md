@@ -162,7 +162,7 @@ buffers:
     broadcastBufferSize: 52428800
     
     
-###Authentication
+### Authentication
 ```
 You can use plex authentication or ldap, adding this in the application.yaml
 all your plex friends that have the option "allow channels" will have access to stream from proxylive
@@ -193,14 +193,14 @@ http://localhost:8080/channel/list/mpeg/1080p?user=myplexuser&pass=myplexpass
 you could get a broadcasted stream from
 http://{server}:8080/view/{profile}/{channelID}
 
-###get the playlist
+### get the playlist
 http://[server]:8080/channel/list/[format]/[profile]
 
 in case of auth enabled
 
 http://[server]:8080/channel/list/[format]/[profile]?user=clientUser&pass=clientPass
 
-###get EPG
+### get EPG
 http://[server]:8080/epg
 
 #### server
