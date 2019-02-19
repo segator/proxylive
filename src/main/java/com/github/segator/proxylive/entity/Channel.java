@@ -9,9 +9,10 @@ public class Channel {
     private Integer number;
     private String name; //used by EPG matching
     private String id; //used by EPG matching
+    private String epgID;
     private String logoURL;
     private File logoFile;
-    private List<ChannelCategory> categories;
+    private List<String> categories;
     private List<ChannelSource> sources;
 
 
@@ -47,6 +48,14 @@ public class Channel {
         this.logoURL = logoURL;
     }
 
+    public String getEpgID() {
+        return epgID;
+    }
+
+    public void setEpgID(String epgID) {
+        this.epgID = epgID;
+    }
+
     public File getLogoFile() {
         return logoFile;
     }
@@ -55,11 +64,11 @@ public class Channel {
         this.logoFile = logoFile;
     }
 
-    public List<ChannelCategory> getCategories() {
+    public List<String> getCategories() {
         return categories;
     }
 
-    public void setCategories(List<ChannelCategory> categories) {
+    public void setCategories(List<String> categories) {
         this.categories = categories;
     }
 

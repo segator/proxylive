@@ -86,7 +86,6 @@ public class HttpDownloaderTask implements IMultiplexerStreamer {
 
     @Override
     public void terminate() {
-        System.out.println("[" + getIdentifier() + "]Required Http stream terminate");
         terminate = true;
     }
 
@@ -102,7 +101,7 @@ public class HttpDownloaderTask implements IMultiplexerStreamer {
         try {
 
             webInputStream = new WebInputStream(new URL(url));
-            System.out.println("[" + getIdentifier() + "] Start Http stream");
+            System.out.println("[" + getIdentifier() + "] Get stream");
             if (webInputStream.connect()) {
                 crashTimes=0;
                 long lastReaded  = new Date().getTime();
@@ -120,7 +119,6 @@ public class HttpDownloaderTask implements IMultiplexerStreamer {
             }else{
                 throw new Exception ("Imposible to connect to:"+url);
             }
-            System.out.println("[" + getIdentifier() + "]Required Http stream terminated");
         } catch (Exception ex) {
             System.out.println(ex.getMessage());
             crashTimes++;

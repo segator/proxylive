@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.github.segator.proxylive.config.ProxyLiveConfiguration;
 import com.github.segator.proxylive.entity.Channel;
-import com.github.segator.proxylive.entity.ChannelCategory;
 import com.github.segator.proxylive.entity.ChannelSource;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -13,15 +12,10 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
-import javax.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
@@ -30,7 +24,6 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.rmi.RemoteException;
 import java.util.*;
 
 public class ChannelTVHeadendService implements ChannelService {
@@ -78,6 +71,8 @@ public class ChannelTVHeadendService implements ChannelService {
             JSONObject channelObject = (JSONObject) ochannel;
             //channel ID
             channel.setId((String)channelObject.get("uuid"));
+            //tvheadend channel match ID with EPG extracted from tvh
+            channel.setEpgID(channel.getId());
             System.out.println("Updating Channel:"+channel.getId());
 
             //Channel number
@@ -92,12 +87,10 @@ public class ChannelTVHeadendService implements ChannelService {
 
             //Channel categories
             JSONArray categories = (JSONArray)channelObject.get("tags");
-            List<ChannelCategory> categoriesNames=new ArrayList();
+            List<String> categoriesNames=new ArrayList();
             for (Object oCategory:categories) {
                 String category =(String)oCategory;
-                ChannelCategory categoryObject = new ChannelCategory();
-                categoryObject.setName(getCategoryName(cachedChannelTags,category));
-                categoriesNames.add(categoryObject);
+                categoriesNames.add(getCategoryName(cachedChannelTags,category));
             }
             channel.setCategories(categoriesNames);
 
@@ -113,6 +106,8 @@ public class ChannelTVHeadendService implements ChannelService {
                 connection.disconnect();
             }
 
+            channel.setLogoURL("https://tv.neries.com/channel/"+channel.getId()+"/icon");
+
             //Channel URL
             channel.setSources(new ArrayList());
             channel.getSources().add(new ChannelSource(1,config.getSource().getTvheadendURL()+"/stream/channel/"+channel.getId()));
@@ -122,9 +117,10 @@ public class ChannelTVHeadendService implements ChannelService {
         }
         tempLogoFilePath = piconsPath.toFile();
         System.out.println("Updating Channel Info Completed");
-        /*ObjectMapper mapper = new ObjectMapper();
-        mapper.enable(SerializationFeature.INDENT_OUTPUT);
-        mapper.writeValue(new File("c:\\file.json"), channels);*/
+        //ObjectMapper mapper = new ObjectMapper();
+        //mapper.enable(SerializationFeature.INDENT_OUTPUT);
+        //mapper.writeValue(new File("D:\\file.json"), channels);
+
         return channels;
     }
 

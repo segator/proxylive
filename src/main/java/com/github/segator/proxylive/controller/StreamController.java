@@ -26,7 +26,6 @@ package com.github.segator.proxylive.controller;
 import com.github.segator.proxylive.ProxyLiveConstants;
 import com.github.segator.proxylive.ProxyLiveUtils;
 import com.github.segator.proxylive.entity.Channel;
-import com.github.segator.proxylive.entity.ChannelCategory;
 import com.github.segator.proxylive.entity.ClientInfo;
 import com.github.segator.proxylive.processor.DirectHLSTranscoderStreamProcessor;
 import com.github.segator.proxylive.processor.IStreamMultiplexerProcessor;
@@ -43,15 +42,12 @@ import com.github.segator.proxylive.processor.IHLSStreamProcessor;
 import com.github.segator.proxylive.service.AuthenticationService;
 
 import java.net.*;
-import java.rmi.RemoteException;
 import java.util.*;
 import java.util.regex.Pattern;
 
 import org.apache.commons.io.IOUtils;
 import static org.hibernate.validator.internal.util.CollectionHelper.newArrayList;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
+
 import org.json.simple.parser.ParseException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
@@ -253,21 +249,18 @@ public class StreamController {
 
         for (Channel channel : channelsOrdered) {
             Set<String> categories= new HashSet<>();
-            for (ChannelCategory channelCategory: channel.getCategories()) {
-                categories.add(String.format(" group-title=\"%s\" ",channelCategory.getName()));
+            for (String channelCategory: channel.getCategories()) {
+                categories.add(String.format(" group-title=\"%s\" ",channelCategory));
             }
             String categoriesString = String.join(" ",categories);
+            String epgIDString = "";
+            if(channel.getEpgID()!=null){
+                epgIDString = String.format("tvg-id=\"%s\"",channel.getEpgID());
+            }
             String logoURL="";
-            if(channel.getLogoURL()!=null){
-                logoURL=channel.getLogoURL();
-            }else if(channel.getLogoFile()!=null){
-                logoURL = String.format("%s/channel/%s/icon",requestBaseURL,channel.getId());
+            if(channel.getLogoURL()!=null || channel.getLogoFile()!=null){
+                logoURL = String.format("tvg-logo=\"%s/channel/%s/icon\"",requestBaseURL,channel.getId());
             }
-
-            if(logoURL!=null){
-                logoURL= String.format("tvg-logo=\"%s\"",logoURL);
-            }
-
 
             String channelURL=String.format("%s/view/%s/%s", requestBaseURL, profile, channel.getId());
             if(format.equals("hls")){
@@ -275,8 +268,8 @@ public class StreamController {
             }
             channelURL=String.format("%s?user=%s&pass=%s",channelURL,parameters.getFirst("user"),parameters.getFirst("pass"));
 
-            buffer.append(String.format("#EXTINF:-1 tvg-chno=\"%d\" %s %s tvg-id=\"%s\" tvg-name=\"%s\" type=\"%s\",%s\r\n%s\r\n",
-                    channel.getNumber(),logoURL,categoriesString,channel.getId(),channel.getName(),format,channel.getName(),channelURL));
+            buffer.append(String.format("#EXTINF:-1 tvg-chno=\"%d\" %s %s %s tvg-name=\"%s\" type=\"%s\",%s\r\n%s\r\n",
+                    channel.getNumber(),logoURL,categoriesString,epgIDString,channel.getName(),format,channel.getName(),channelURL));
         }
         return buffer.toString();
     }

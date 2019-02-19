@@ -1,6 +1,7 @@
 package com.github.segator.proxylive.config;
 
 public class ChannelsConfiguration {
+    private GitSource git;
     private String url;
     private long refresh;
     private String type;
@@ -30,5 +31,13 @@ public class ChannelsConfiguration {
 
     public void setRefresh(long refresh) {
         this.refresh = refresh;
+    }
+
+    public GitSource getGit() {
+        return git;
+    }
+
+    public void setGit(GitSource git) {
+        this.git = git;
     }
 }
