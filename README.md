@@ -242,7 +242,7 @@ mvn clean install
 
 ## Run in docker
 ```bash
-docker run --name=proxylive -p 8080:8080 --restart=always-d -v /my/application.yml:/app/application.yml segator/proxylive
+docker run --name=proxylive -p 8080:8080 --restart=always -d -v /my/application.yml:/app/application.yml:ro segator/proxylive
 ```
 
 ## Run on any OS

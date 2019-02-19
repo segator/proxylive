@@ -1,17 +1,11 @@
 spring.jackson.serialization.INDENT_OUTPUT: true
 source:
-    tvheadendURL:  http://user:pass@tvheadend:9981
     epg:
-        #url: http://user:pass@localhost/xmltv.xml or file://path/xmltv.xml exec://usr/bin/tv_grab_whatever
         refresh: 600
     channels:
-        #url: http://mywebserver/my.json || file://my.json
-        #type: json
-        type: tvheadend
-        refresh: 300
-    reconnectTimeout: 10
+        refresh: 60
+    reconnectTimeout: 15
 streamTimeout: 30
-internalConnection: true
 ffmpeg:
     path: ffmpeg
     profiles:
