@@ -107,7 +107,9 @@ public class TranscodeTask implements IMultiplexerStreamer {
             if (isTerminated()) {
                 return;
             }
-            process = Runtime.getRuntime().exec(ffmpegExecutable + " -i pipe:0 " + transcodeParameters + " -f mpegts -");
+            String ffmpegCommand = ffmpegExecutable + " -i pipe:0 " + transcodeParameters + " -f mpegts -";
+            System.out.println("Transcoding Command" + ffmpegCommand);
+            process = Runtime.getRuntime().exec(ffmpegCommand);
 
             errorReaderThread = new Thread("Transcoding Error Reader Thread:" + getIdentifier()) {
                 public void run() {

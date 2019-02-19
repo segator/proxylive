@@ -94,7 +94,9 @@ public class DirectTranscodeTask implements IMultiplexerStreamer {
             if (isTerminated()) {
                 return;
             }
-            process = Runtime.getRuntime().exec(ffmpegExecutable + " -i " + url + " " + transcodeParameters + " " + ffmpegMpegTSParameters+" -");
+            String ffmpegCommand = ffmpegExecutable + " -i " + url + " " + transcodeParameters + " " + ffmpegMpegTSParameters+" -";
+            System.out.println("Transcoding Command" + ffmpegCommand);
+            process = Runtime.getRuntime().exec(ffmpegCommand);
 
             errorReaderThread = new Thread("Transcoding Error Reader Thread:" + getIdentifier()) {
                 public void run() {

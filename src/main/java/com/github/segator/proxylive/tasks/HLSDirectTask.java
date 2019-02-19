@@ -138,7 +138,7 @@ public class HLSDirectTask implements IStreamTask {
             dateFormatter = new SimpleDateFormat(ffmpegProfilerService.getSegmentDate("SimpleDateFormat"));
             System.out.println("[" + getIdentifier() + "] Start HLS");
             hlsParameters = ffmpegProfilerService.getHLSParameters(getIdentifier());
-            transcodeParameters = " -c:a copy -c:v copy ";
+            transcodeParameters = " -c:a copy -c:v copy -sn ";
 
             Path hlsTempPath = ffmpegProfilerService.getHLSTemporalPath(getIdentifier());
             File tmpOutputHLSPath = hlsTempPath.toFile();
@@ -158,7 +158,9 @@ public class HLSDirectTask implements IStreamTask {
             if (isTerminated()) {
                 return;
             }
-            process = Runtime.getRuntime().exec(ffmpegExecutable +  " -i " + url + " " +  transcodeParameters +" "+ hlsParameters);
+            String ffmpegCommand = ffmpegExecutable +  " -i " + url + " " +  transcodeParameters +" "+ hlsParameters;
+            System.out.println("[HLS Command]"+ffmpegCommand);
+            process = Runtime.getRuntime().exec(ffmpegCommand);
 
             InputStream is = new WithoutBlockingInputStream(process.getErrorStream());
             byte[] bufferError = new byte[1024];
