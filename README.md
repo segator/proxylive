@@ -21,9 +21,8 @@ application.yaml
 source:
     tvheadendURL: http://user:password@your.tvheadend.com:9981
     channels:
-        type: json
+        type: tvheadend
         refresh: 60 #In seconds
-        url: file:///my/disk/channels.json or  http://my.server.com/channels.json
 ```
 #### Custom JSON Channel Source
 Custom JSON can be read from:
@@ -104,6 +103,7 @@ source:
             
     #In case of source connection problem, retry connection in 10 seconds
     reconnectTimeout: 10
+    ##This is optional, only used if tvheadend channel backend
     tvheadendURL: http://tvheadend:9981
     epg:
         url: http://tvheadend:9981/xmltv/channels
