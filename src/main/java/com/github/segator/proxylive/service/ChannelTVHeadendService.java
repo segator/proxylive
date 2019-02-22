@@ -94,21 +94,23 @@ public class ChannelTVHeadendService implements ChannelService {
             }
             channel.setCategories(categoriesNames);
 
-            try {
-                HttpURLConnection connection = getURLConnection((String) channelObject.get("icon_public_url"));
-                if (connection.getResponseCode() != 404 && connection.getResponseCode() != 1) {
-                    File logoFile = Paths.get(piconsPath.toString(), channel.getId() + ".png").toFile();
-                    channel.setLogoFile(logoFile);
-                    FileOutputStream fos = new FileOutputStream(logoFile);
-                    IOUtils.copy(connection.getInputStream(), fos);
-                    fos.flush();
-                    connection.getInputStream().close();
-                    fos.close();
-                    connection.disconnect();
-                }
-                channel.setLogoURL("https://tv.neries.com/channel/" + channel.getId() + "/icon");
-            }catch(Exception ex){
+            String iconURL = (String)channelObject.get("icon_public_url");
+            if (iconURL!= null) {
+                    try {
+                    HttpURLConnection connection = getURLConnection(iconURL);
+                    if (connection.getResponseCode() != 404 && connection.getResponseCode() != 1) {
+                        File logoFile = Paths.get(piconsPath.toString(), channel.getId() + ".png").toFile();
+                        channel.setLogoFile(logoFile);
+                        FileOutputStream fos = new FileOutputStream(logoFile);
+                        IOUtils.copy(connection.getInputStream(), fos);
+                        fos.flush();
+                        connection.getInputStream().close();
+                        fos.close();
+                        connection.disconnect();
+                    }
+                }catch(Exception ex){
 
+                }
             }
 
             //Channel URL

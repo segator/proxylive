@@ -30,6 +30,9 @@ public class EPGService {
     @Scheduled(fixedDelay = 600 * 1000) //Every 100 Minute
     @PostConstruct
     private void buildEPG() throws Exception {
+        if(config.getSource().getEpg()==null || config.getSource().getEpg().getUrl()==null ){
+            return;
+        }
         if(new Date().getTime()-lastUpdate>+(config.getSource().getEpg().getRefresh()*1000)) {
             System.out.println("Refreshing EPG");
             HttpURLConnection connection = getURLConnection(config.getSource().getEpg().getUrl());

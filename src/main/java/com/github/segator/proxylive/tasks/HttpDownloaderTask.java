@@ -27,16 +27,16 @@ import com.github.segator.proxylive.entity.Channel;
 import com.github.segator.proxylive.entity.ChannelSource;
 import com.github.segator.proxylive.processor.IStreamProcessor;
 import com.github.segator.proxylive.stream.BroadcastCircularBufferedOutputStream;
+import com.github.segator.proxylive.stream.UDPInputStream;
+import com.github.segator.proxylive.stream.VideoInputStream;
 import com.github.segator.proxylive.stream.WebInputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Date;
 import java.util.Objects;
-import java.util.regex.Pattern;
 import javax.annotation.PostConstruct;
 import com.github.segator.proxylive.config.ProxyLiveConfiguration;
-import com.github.segator.proxylive.stream.WithoutBlockingInputStream;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -48,7 +48,7 @@ public class HttpDownloaderTask implements IMultiplexerStreamer {
     private String url;
     private final Channel channel;
     private Date runDate;
-    private WebInputStream webInputStream;
+    private VideoInputStream videoInputStream;
     private BroadcastCircularBufferedOutputStream multiplexerOutputStream;
     private boolean terminate = false;
     private boolean crashed = false;
@@ -99,14 +99,17 @@ public class HttpDownloaderTask implements IMultiplexerStreamer {
         runDate = new Date();
         int len;
         try {
+            if(url.startsWith("http://")){
+                videoInputStream = new WebInputStream(new URL(url));
+            }else if(url.startsWith("udp://")){
+                videoInputStream = new UDPInputStream(url);
+            }
 
-            webInputStream = new WebInputStream(new URL(url));
             System.out.println("[" + getIdentifier() + "] Get stream");
-            if (webInputStream.connect()) {
-                crashTimes=0;
+            if (videoInputStream.connect()) {
                 long lastReaded  = new Date().getTime();
                 while (!terminate) {
-                    len = webInputStream.read(buffer);
+                    len = videoInputStream.read(buffer);
                     if (len > 0) {
                         multiplexerOutputStream.write(buffer, 0, len);
                         lastReaded  = new Date().getTime();
@@ -121,15 +124,17 @@ public class HttpDownloaderTask implements IMultiplexerStreamer {
             }
         } catch (Exception ex) {
             System.out.println(ex.getMessage());
-            crashTimes++;
-            if (crashTimes > 10 || terminate) {
+
+            if (crashTimes > 2 || terminate) {
                 crashed = true;
+                terminate = true;
             } else {
                 closeWebStream();
                 //If exist more sources try another
                 sourcePriority++;
                 ChannelSource channelSource = channel.getSourceByPriority(sourcePriority);
                 if(channelSource==null){
+                    crashTimes++;
                     sourcePriority=1;
                     channelSource = channel.getSourceByPriority(sourcePriority);
                 }
@@ -148,7 +153,7 @@ public class HttpDownloaderTask implements IMultiplexerStreamer {
 
     private void closeWebStream() {
         try {
-            webInputStream.close();
+            videoInputStream.close();
         } catch (Exception ex) {
         }
     }

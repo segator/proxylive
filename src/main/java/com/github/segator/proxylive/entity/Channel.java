@@ -14,6 +14,7 @@ public class Channel {
     private File logoFile;
     private List<String> categories;
     private List<ChannelSource> sources;
+    private String ffmpegParameters="";
 
 
     public Integer getNumber() {
@@ -88,6 +89,14 @@ public class Channel {
 
     public void setSources(List<ChannelSource> sources) {
         this.sources = sources;
+    }
+
+    public String getFfmpegParameters() {
+        return ffmpegParameters;
+    }
+
+    public void setFfmpegParameters(String ffmpegParameters) {
+        this.ffmpegParameters = ffmpegParameters;
     }
 }
 

@@ -23,6 +23,8 @@
  */
 package com.github.segator.proxylive.stream;
 
+import org.springframework.beans.factory.annotation.Autowired;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
@@ -35,7 +37,7 @@ import java.util.Date;
  *
  * @author Isaac Aymerich <isaac.aymerich@gmail.com>
  */
-public class WebInputStream extends InputStream {
+public class WebInputStream extends VideoInputStream{
 
     private final URL url;
     private HttpURLConnection connection;
@@ -46,7 +48,7 @@ public class WebInputStream extends InputStream {
 
     }
 
-    private synchronized void initializeConnection() throws IOException {
+    private void initializeConnection() throws IOException {
         connection = (HttpURLConnection) url.openConnection();
         connection.setReadTimeout(10000);
         if (url.getUserInfo() != null) {
@@ -57,7 +59,8 @@ public class WebInputStream extends InputStream {
 
     }
 
-    public synchronized boolean connect() throws IOException {
+    @Autowired
+    public boolean connect() throws IOException {
         initializeConnection();
         connection.connect();
         boolean connected = connection.getResponseCode() == 200 || connection.getResponseCode() == 204;
@@ -66,6 +69,7 @@ public class WebInputStream extends InputStream {
         return connected;
     }
 
+    @Autowired
     public boolean isConnected() {
         return httpInputStream != null;
     }

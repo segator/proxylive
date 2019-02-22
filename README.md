@@ -67,17 +67,18 @@ channels.json
       "logoFile":"/picons/la1hd.png",
       "logoURL": "http://server.com/logo.png",
       "categories" : [ "Generales", "TDT" ],
+      "ffmpegParameters": "extra ffmpeg parameters only for this channel, this is optional, usable for MTPS extracting",
       "sources" : [ 
           {
             "url" : "http://your/server/stream",
             "priority" : 1
           },
           {
-            "url" : "http://your2/server/stream",
+            "url" : "udp://225.225.201.1:8008",
             "priority" : 2
           },
           {
-            "url" : "http://your3/server/stream",
+            "url" : "rtp://200.100.1500:1001",
             "priority" : 3
           } 
       ]
@@ -259,8 +260,10 @@ java -jar proxylive.jar
 - [X] Custom Backends as source
 - [ ] Prometheus Support
 - [ ] Fluend support
+- [X] UDP Input
 - [ ] RTMP Input
 - [ ] RTMP Output
+- [ ] UDP Output
 - [ ] Dash Output
 - [X] HLS Output
 - [x] MPEG-TS Output

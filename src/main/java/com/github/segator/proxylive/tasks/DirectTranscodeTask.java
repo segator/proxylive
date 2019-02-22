@@ -62,6 +62,7 @@ public class DirectTranscodeTask implements IMultiplexerStreamer {
     @PostConstruct
     public void initializeBean() {
         url = "http://localhost:"+serverPort+"/view/raw/" + channel.getId()+"?user=internal&token="+config.getInternalToken();
+        //url = channel.getSourceByPriority(1).getUrl();
         multiplexerOutputStream = new BroadcastCircularBufferedOutputStream(config.getBuffers().getBroadcastBufferSize());
 
     }
@@ -94,7 +95,7 @@ public class DirectTranscodeTask implements IMultiplexerStreamer {
             if (isTerminated()) {
                 return;
             }
-            String ffmpegCommand = ffmpegExecutable + " -i " + url + " " + transcodeParameters + " " + ffmpegMpegTSParameters+" -";
+            String ffmpegCommand = ffmpegExecutable + " -i " + url +  " " +  channel.getFfmpegParameters() + " " + transcodeParameters + " " + ffmpegMpegTSParameters+" -";
             System.out.println("Transcoding Command" + ffmpegCommand);
             process = Runtime.getRuntime().exec(ffmpegCommand);
 
