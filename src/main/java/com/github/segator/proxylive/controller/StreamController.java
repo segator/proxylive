@@ -25,10 +25,12 @@ package com.github.segator.proxylive.controller;
 
 import com.github.segator.proxylive.ProxyLiveConstants;
 import com.github.segator.proxylive.ProxyLiveUtils;
+import com.github.segator.proxylive.config.FFMpegProfile;
 import com.github.segator.proxylive.entity.Channel;
 import com.github.segator.proxylive.entity.ClientInfo;
 import com.github.segator.proxylive.processor.DirectHLSTranscoderStreamProcessor;
 import com.github.segator.proxylive.processor.IStreamMultiplexerProcessor;
+import com.github.segator.proxylive.profiler.FFmpegProfilerService;
 import com.github.segator.proxylive.service.ChannelService;
 import com.github.segator.proxylive.service.EPGService;
 import com.github.segator.proxylive.service.TokensService;
@@ -82,6 +84,8 @@ public class StreamController {
     private ChannelService channelService;
     @Autowired
     private EPGService epgService;
+    @Autowired
+    FFmpegProfilerService ffmpegProfileService;
 
     @Autowired
     private TokensService tokenService;
@@ -123,7 +127,8 @@ public class StreamController {
             channelID=channelID.split(Pattern.quote("?"))[0];
         }
         Channel channel = channelService.getChannelByID(channelID);
-        if(channel==null){
+        FFMpegProfile ffmpegProfile = ffmpegProfileService.getProfile(profile);
+        if(channel==null || ffmpegProfile==null){
             response.setStatus(404);
             return;
         }
@@ -231,6 +236,13 @@ public class StreamController {
         if(!userValidation(request,response)){
             return "invalid user";
         }
+
+        FFMpegProfile ffmpegProfile = ffmpegProfileService.getProfile(profile);
+        if(ffmpegProfile==null){
+            response.setStatus(404);
+            return "Profile not found";
+        }
+
         response.setHeader("Content-Disposition", "attachment; filename=playlist.m3u");
         response.setHeader("Access-Control-Allow-Origin", "*");
         response.setStatus(HttpStatus.OK.value());
@@ -308,10 +320,12 @@ public class StreamController {
         }
         String clientIdentifier = ProxyLiveUtils.getRequestIP(request) + ProxyLiveUtils.getBrowserInfo(request);
         Channel channel = channelService.getChannelByID(channelID);
-        if(channel==null){
+        FFMpegProfile ffmpegProfile = ffmpegProfileService.getProfile(profile);
+        if(channel==null || ffmpegProfile==null){
             response.setStatus(404);
             return;
         }
+
 
         DirectHLSTranscoderStreamProcessor hlsStreamProcessor = streamProcessorsSession.getHLSStream(ProxyLiveUtils.getRequestIP(request), channel.getId(), profile);
         if (hlsStreamProcessor == null) {
