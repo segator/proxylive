@@ -149,6 +149,8 @@ ffmpeg:
         parameters: "-threads 0 -f mpegts -mpegts_m2ts_mode 1 -mpegts_copyts 1 -mpegts_flags +resend_headers  "
 		#Specific parameters for mpegTS(only works if a diferent profile than raw is selected, raw send direct data from backend so no transcoded, in this case not applied this parameter.
     hls:
+        #by default HLS is disabled 
+        enabled: false
         tempPath: "/tmp"
 		#Path where HLS will save segment files and playlist
         parameters: "-flags -global_header  -avoid_negative_ts disabled -map_metadata -1 -start_at_zero -copyts -flags -global_header -vsync cfr -y -nostats -f hls  -hls_time 2 -hls_list_size 10 -hls_wrap 20 -hls_allow_cache 0  -hls_flags +append_list -hls_flags +discont_start -hls_flags +delete_segments"

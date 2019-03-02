@@ -28,7 +28,7 @@ package com.github.segator.proxylive.config;
  * @author Isaac Aymerich <isaac.aymerich@gmail.com>
  */
 public class HLSConfiguration {
-
+    private Boolean enabled= false;
     private String tempPath;
     private String parameters;
     private String directParameters;
@@ -64,5 +64,13 @@ public class HLSConfiguration {
 
     public void setDirectParameters(String directParameters) {
         this.directParameters = directParameters;
+    }
+
+    public Boolean getEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(Boolean enabled) {
+        this.enabled = enabled;
     }
 }

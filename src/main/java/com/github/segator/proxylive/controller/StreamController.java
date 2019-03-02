@@ -320,6 +320,10 @@ public class StreamController {
         if(!userValidation(request,response)){
             return;
         }
+        if(!config.getFfmpeg().getHls().getEnabled()){
+            response.setStatus(404);
+            return;
+        }
         String clientIdentifier = ProxyLiveUtils.getRequestIP(request) + ProxyLiveUtils.getBrowserInfo(request);
         Channel channel = channelService.getChannelByID(channelID);
         FFMpegProfile ffmpegProfile = ffmpegProfileService.getProfile(profile);
