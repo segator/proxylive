@@ -2,6 +2,7 @@ package com.github.segator.proxylive.entity;
 
 import java.io.File;
 import java.net.URL;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
@@ -78,11 +79,16 @@ public class Channel {
     }
 
     public ChannelSource getSourceByPriority(int priority){
-        Optional<ChannelSource> optionalFind = getSources().stream().filter(s -> s.getPriority()==priority).findFirst();
-        if(optionalFind.isPresent()){
-            return optionalFind.get();
-        }else{
+        Object[] orderedSources = getSources().stream().sorted(new Comparator<ChannelSource>() {
+            @Override
+            public int compare(ChannelSource o1, ChannelSource o2) {
+                return o1.getPriority().compareTo(o2.getPriority());
+            }
+        }).toArray();
+        if(priority> orderedSources.length){
             return null;
+        }else {
+            return (ChannelSource) orderedSources[priority-1];
         }
 
     }

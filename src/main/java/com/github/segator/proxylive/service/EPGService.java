@@ -17,6 +17,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Base64;
 import java.util.Date;
+import java.util.zip.GZIPInputStream;
 
 @Service
 public class EPGService {
@@ -39,12 +40,16 @@ public class EPGService {
             if (connection.getResponseCode() != 200) {
                 return;
             }
+            InputStream channel = connection.getInputStream();
+            if(config.getSource().getEpg().getUrl().endsWith("gz")){
+                channel = new GZIPInputStream(channel);
+            }
 
             File tempEPGFileRound = File.createTempFile("epg", "xml");
             FileOutputStream fos = new FileOutputStream(tempEPGFileRound);
-            IOUtils.copy(connection.getInputStream(), fos);
+            IOUtils.copy(channel, fos);
             fos.flush();
-            connection.getInputStream().close();
+            channel.close();
             fos.close();
             connection.disconnect();
 

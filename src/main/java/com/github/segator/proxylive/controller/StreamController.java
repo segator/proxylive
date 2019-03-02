@@ -128,7 +128,7 @@ public class StreamController {
         }
         Channel channel = channelService.getChannelByID(channelID);
         FFMpegProfile ffmpegProfile = ffmpegProfileService.getProfile(profile);
-        if(channel==null || ffmpegProfile==null){
+        if(channel==null || (ffmpegProfile==null   && !"raw".equals(profile))){
             response.setStatus(404);
             return;
         }
@@ -157,7 +157,9 @@ public class StreamController {
                             lastReaded = new Date().getTime();
                             clientStream.write(buffer, 0, len);
                         } else {
-                            if((new Date().getTime() - lastReaded)  > config.getStreamTimeoutMilis()) {
+                            if(!iStreamProcessor.isConnected()){
+                                throw new IOException("Disconnected" + client + " because task crashed on " + iStreamProcessor);
+                            }else if((new Date().getTime() - lastReaded)  > config.getStreamTimeoutMilis()) {
                                 throw new IOException("Disconnected" + client + " because timeout on " + iStreamProcessor);
                             /*}else if((new Date().getTime() - lastReaded)  > 500 && profile.equals("raw")) {
                                 if(fis.getFilePointer()==fis.length()){fis.seek(0);}
@@ -238,7 +240,7 @@ public class StreamController {
         }
 
         FFMpegProfile ffmpegProfile = ffmpegProfileService.getProfile(profile);
-        if(ffmpegProfile==null){
+        if(ffmpegProfile==null && !"raw".equals(profile)){
             response.setStatus(404);
             return "Profile not found";
         }
@@ -321,7 +323,7 @@ public class StreamController {
         String clientIdentifier = ProxyLiveUtils.getRequestIP(request) + ProxyLiveUtils.getBrowserInfo(request);
         Channel channel = channelService.getChannelByID(channelID);
         FFMpegProfile ffmpegProfile = ffmpegProfileService.getProfile(profile);
-        if(channel==null || ffmpegProfile==null){
+        if(channel==null || (ffmpegProfile==null && !"raw".equals(profile))){
             response.setStatus(404);
             return;
         }

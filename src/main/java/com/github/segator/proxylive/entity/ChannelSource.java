@@ -2,7 +2,7 @@ package com.github.segator.proxylive.entity;
 
 public class ChannelSource {
     private String url;
-    private int priority;
+    private Integer priority;
 
     public ChannelSource(){
 
@@ -20,11 +20,11 @@ public class ChannelSource {
         this.url = url;
     }
 
-    public int getPriority() {
+    public Integer getPriority() {
         return priority;
     }
 
-    public void setPriority(int priority) {
+    public void setPriority(Integer priority) {
         this.priority = priority;
     }
 }
