@@ -13,10 +13,9 @@ ENV     LANG en_US.UTF-8
 ENV     LC_ALL en_US.UTF-8
 
 
-RUN yum update -y && \
-    yum -y install java-1.8.0-openjdk java-1.8.0-openjdk-devel && \
-    yum clean all && \
-    rm -rf /var/cache/yum
+RUN apt-get update -y && \
+    apt-get install -y openjdk-8-jdk && \
+    apt-get clean all
 
 ENV JAVA_HOME /usr/java/default
 COPY entrypoint.sh /entrypoint.sh
