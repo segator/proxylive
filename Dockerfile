@@ -3,7 +3,7 @@ WORKDIR /app/code
 COPY / /app/code
 RUN mvn clean install
 
-FROM jrottenberg/ffmpeg:3.2-centos
+FROM jrottenberg/ffmpeg:3.4-vaapi
 MAINTAINER Isaac Aymerich <isaac.aymerich@gmail.com>
 
 COPY --from=builder /app/code/target/ProxyLive.jar /app/proxyLive.jar
