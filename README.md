@@ -260,6 +260,8 @@ java -jar proxylive.jar
 - [X] Multiple Source Input(Failover sources)
 - [X] TVHeadend Backend as source
 - [X] Custom Backends as source
+- [X] QSV/VAAPI Support (Hardware transcoding)
+- [ ] NVENC Support (Hardware Nvidia Transcoding)
 - [ ] Prometheus Support
 - [ ] Fluend support
 - [X] UDP Input
