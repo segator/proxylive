@@ -53,6 +53,11 @@ public class PrometheusMetrics implements MeterBinder {
                 tagsClientInfo.add(Tag.of("ip-country", clientInfo.getGeoInfo().getCountry().getName()));
                 tagsClientInfo.add(Tag.of("ip-latitude", clientInfo.getGeoInfo().getLocation().getLatitude().toString()));
                 tagsClientInfo.add(Tag.of("ip-longitude", clientInfo.getGeoInfo().getLocation().getLongitude().toString()));
+            }else{
+                tagsClientInfo.add(Tag.of("ip-city", "Not found"));
+                tagsClientInfo.add(Tag.of("ip-country", "Not found"));
+                tagsClientInfo.add(Tag.of("ip-latitude", "0"));
+                tagsClientInfo.add(Tag.of("ip-longitude", "0"));
             }
 
             for (IStreamProcessor stream:   clientInfo.getStreams()) {
