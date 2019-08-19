@@ -129,22 +129,22 @@ ffmpeg:
         -
             alias: "aac"
             #FFmpeg parameters, check ffmpeg documentation for more info
-            parameters: "-sn -ac 2 -c:a aac -b:a 320k -c:v copy"
+            parameters: "-i {input} {channelParameters} -sn -ac 2 -c:a aac -b:a 320k -c:v copy"
         -
             alias: "240p"
-            parameters: "-sn -c:a:0 aac -ac 2 -b:a 64k -c:v libx264 -tune zerolatency -g 10 -vprofile high -level 4.0 -crf 18 -movflags +faststart -bufsize 15000k -maxrate 300k  -preset veryslow -vf scale=-1:244,yadif=0"
+            parameters: "-i {input} {channelParameters} -sn -c:a:0 aac -ac 2 -b:a 64k -c:v libx264 -tune zerolatency -g 10 -vprofile high -level 4.0 -crf 18 -movflags +faststart -bufsize 15000k -maxrate 300k  -preset veryslow -vf scale=-1:244,yadif=0"
         -
             alias: "360p"
-            parameters: "-sn -c:a:0 aac -ac 2 -b:a 96k -c:v libx264 -tune zerolatency -g 10 -vprofile high -level 4.0 -crf 18 -movflags +faststart -bufsize 15000k -maxrate 700k  -preset veryslow -vf scale=-1:360,yadif=0"
+            parameters: "-i {input} {channelParameters} -sn -c:a:0 aac -ac 2 -b:a 96k -c:v libx264 -tune zerolatency -g 10 -vprofile high -level 4.0 -crf 18 -movflags +faststart -bufsize 15000k -maxrate 700k  -preset veryslow -vf scale=-1:360,yadif=0"
         -
             alias: "480p"
-            parameters: "-sn -c:a:0 aac -ac 2 -b:a 196k -c:v libx264 -tune zerolatency -g 10 -vprofile high -level 4.0 -crf 18 -movflags +faststart -bufsize 15000k -maxrate 1500k  -preset slow -vf scale=-1:484,yadif=0"
+            parameters: "-i {input} {channelParameters} -sn -c:a:0 aac -ac 2 -b:a 196k -c:v libx264 -tune zerolatency -g 10 -vprofile high -level 4.0 -crf 18 -movflags +faststart -bufsize 15000k -maxrate 1500k  -preset slow -vf scale=-1:484,yadif=0"
         -
             alias: "720p"
-            parameters: "-sn  -c:a:0 aac -ac 2 -b:a 320k -c:v libx264 -tune zerolatency -g 10 -vprofile high -level 4.0 -crf 18 -movflags +faststart -bufsize 15000k -maxrate 3000k  -preset fast -vf scale=-1:720,yadif=0"
+            parameters: "-i {input} {channelParameters} -sn  -c:a:0 aac -ac 2 -b:a 320k -c:v libx264 -tune zerolatency -g 10 -vprofile high -level 4.0 -crf 18 -movflags +faststart -bufsize 15000k -maxrate 3000k  -preset fast -vf scale=-1:720,yadif=0"
         -
             alias: "1080p"
-            parameters:  "-sn  -c:a:0 aac -ac 2 -b:a 320k -c:v libx264 -tune zerolatency -g 300 -vprofile high -level 4.0 -movflags +faststart -bufsize 15000k -maxrate 5000k  -preset faster -vf yadif=0"
+            parameters:  "-i {input} {channelParameters} -sn  -c:a:0 aac -ac 2 -b:a 320k -c:v libx264 -tune zerolatency -g 300 -vprofile high -level 4.0 -movflags +faststart -bufsize 15000k -maxrate 5000k  -preset faster -vf yadif=0"
     mpegTS:
         parameters: "-threads 0 -f mpegts -mpegts_m2ts_mode 1 -mpegts_copyts 1 -mpegts_flags +resend_headers  "
 		#Specific parameters for mpegTS(only works if a diferent profile than raw is selected, raw send direct data from backend so no transcoded, in this case not applied this parameter.
@@ -260,6 +260,8 @@ java -jar proxylive.jar
 - [X] Multiple Source Input(Failover sources)
 - [X] TVHeadend Backend as source
 - [X] Custom Backends as source
+- [X] QSV/VAAPI Support (Hardware transcoding)
+- [ ] NVENC Support (Hardware Nvidia Transcoding)
 - [ ] Prometheus Support
 - [ ] Fluend support
 - [X] UDP Input
