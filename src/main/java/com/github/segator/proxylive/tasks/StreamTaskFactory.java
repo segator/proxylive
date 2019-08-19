@@ -56,11 +56,4 @@ public class StreamTaskFactory {
         return new HLSDirectTask(channel,profile);
 
     }
-
-    @Bean
-    @Scope(value = "prototype")
-    public HLSTask HLSTask(IStreamMultiplexerProcessor iStreamProcessor) throws IOException {
-        return new HLSTask(iStreamProcessor);
-
-    }
 }

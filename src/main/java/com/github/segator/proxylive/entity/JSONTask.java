@@ -29,6 +29,7 @@ package com.github.segator.proxylive.entity;
  */
 public class JSONTask {
     private String identifier;
+    private String source;
     private String status;
     private String runningTime;
 
@@ -38,6 +39,14 @@ public class JSONTask {
 
     public void setIdentifier(String identifier) {
         this.identifier = identifier;
+    }
+
+    public String getSource() {
+        return source;
+    }
+
+    public void setSource(String source) {
+        this.source = source;
     }
 
     public String getStatus() {

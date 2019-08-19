@@ -95,6 +95,11 @@ public class HttpDownloaderTask implements IMultiplexerStreamer {
     }
 
     @Override
+    public String getSource() {
+        return url;
+    }
+
+    @Override
     public void run() {
         runDate = new Date();
         int len;

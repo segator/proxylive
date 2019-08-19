@@ -31,6 +31,7 @@ import java.util.Date;
  * @author Isaac Aymerich <isaac.aymerich@gmail.com>
  */
 public interface IStreamTask extends Runnable {
+    public String getSource();
 
     public boolean isCrashed();
 

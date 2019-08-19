@@ -150,6 +150,7 @@ public class WSController {
         long now = new Date().getTime();
         for (Entry<Thread, IStreamTask> entry : operationMap.entrySet()) {
             JSONTask jsTask = new JSONTask();
+            jsTask.setSource(entry.getValue().getSource());
             Date runDate = entry.getValue().startTaskDate();
             if (runDate != null) {
                 jsTask.setRunningTime(ProxyLiveUtils.convertMilisToTime(now - runDate.getTime()));
@@ -170,8 +171,14 @@ public class WSController {
         for (ClientInfo client : clientInfoList) {
             JSONClientInfo jsonClient = new JSONClientInfo();
             jsonClient.setUser(client.getClientUser());
-            jsonClient.setIp(client.getIp());
+            jsonClient.setIp(client.getIp().getHostAddress());
             jsonClient.setBrowserInfo(client.getBrowserInfo());
+            if(client.getGeoInfo()!=null) {
+                jsonClient.setIPCity(client.getGeoInfo().getCity().getName());
+                jsonClient.setIPCountry(client.getGeoInfo().getCountry().getName());
+                jsonClient.setIPLatitude(client.getGeoInfo().getLocation().getLatitude());
+                jsonClient.setIPLongitude(client.getGeoInfo().getLocation().getLongitude());
+            }
             jsonClient.setStreams(new ArrayList());
             jsonClients.add(jsonClient);
 

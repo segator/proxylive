@@ -41,6 +41,7 @@ public class ProxyLiveConfiguration {
     private BufferingConfiguration buffers;
     private FFMpegConfiguration ffmpeg;
     private HttpLiveSource source;
+    private GEOIPDatasource geoIP;
     private AuthenticationConfiguration authentication;
     private int streamTimeout;
     private boolean internalConnection;
@@ -80,6 +81,14 @@ public class ProxyLiveConfiguration {
 
     public HttpLiveSource getSource() {
         return source;
+    }
+
+    public GEOIPDatasource getGeoIP() {
+        return geoIP;
+    }
+
+    public void setGeoIP(GEOIPDatasource geoIP) {
+        this.geoIP = geoIP;
     }
 
     public void setSource(HttpLiveSource source) {

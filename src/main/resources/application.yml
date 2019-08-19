@@ -1,4 +1,25 @@
 spring.jackson.serialization.INDENT_OUTPUT: true
+management:
+    server:
+        port: 8090
+    endpoints:
+        prometheus:
+            enabled: true
+        metrics:
+            enabled: true
+        web:
+            exposure:
+                include: "*"
+    metrics:
+        export:
+            prometheus:
+                enabled: true
+    security:
+        enabled: false
+
+geoIP:
+    enabled: true
+    url: https://geolite.maxmind.com/download/geoip/database/GeoLite2-City.tar.gz
 source:
     epg:
         refresh: 600

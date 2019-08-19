@@ -24,6 +24,8 @@
 package com.github.segator.proxylive.entity;
 
 import com.github.segator.proxylive.processor.IStreamProcessor;
+
+import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -34,7 +36,8 @@ import java.util.Objects;
  */
 public class ClientInfo {
     private String clientUser;
-    private String ip;
+    private InetAddress ip;
+    private GEOInfo geoInfo;
     private String browserInfo;
     private List<IStreamProcessor> streams;
     
@@ -42,11 +45,11 @@ public class ClientInfo {
         streams=new ArrayList();
     }
 
-    public String getIp() {
+    public InetAddress getIp() {
         return ip;
     }
 
-    public void setIp(String ip) {
+    public void setIp(InetAddress ip) {
         this.ip = ip;
     }
 
@@ -62,7 +65,14 @@ public class ClientInfo {
         this.clientUser = clientUser;
     }
 
-    
+    public GEOInfo getGeoInfo() {
+        return geoInfo;
+    }
+
+    public void setGeoInfo(GEOInfo geoInfo) {
+        this.geoInfo = geoInfo;
+    }
+
     public void setBrowserInfo(String browserInfo) {
         this.browserInfo = browserInfo;
     }

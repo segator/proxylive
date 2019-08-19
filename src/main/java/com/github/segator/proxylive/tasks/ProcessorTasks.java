@@ -102,12 +102,8 @@ public class ProcessorTasks {
     public synchronized Map<Thread, IStreamTask> getOperationMap(Class clazz) {
         if (clazz.equals(HttpDownloaderTask.class)) {
             return httpSourceStreamTasks;
-        } else if (clazz.equals(TranscodeTask.class)) {
-            return transcodeTasks;
         } else if (clazz.equals(DirectTranscodeTask.class)) {
             return directTranscodeTasks;
-        } else if (clazz.equals(HLSTask.class)) {
-            return HLSTasks;
         } else if (clazz.equals(HLSDirectTask.class)) {
             return HLSDirectTasks;
         }

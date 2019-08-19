@@ -33,6 +33,10 @@ import java.util.List;
 public class JSONClientInfo {
     private String user;
     private String ip;
+    private String IPCountry;
+    private String IPCity;
+    private Double IPLatitude;
+    private Double IPLongitude;
     private String browserInfo;    
     private List<StreamProcessor> streams;
 
@@ -95,5 +99,36 @@ public class JSONClientInfo {
     public void setStreams(List<StreamProcessor> streams) {
         this.streams = streams;
     }
-    
+
+    public String getIPCountry() {
+        return IPCountry;
+    }
+
+    public void setIPCountry(String IPCountry) {
+        this.IPCountry = IPCountry;
+    }
+
+    public String getIPCity() {
+        return IPCity;
+    }
+
+    public void setIPCity(String IPCity) {
+        this.IPCity = IPCity;
+    }
+
+    public Double getIPLatitude() {
+        return IPLatitude;
+    }
+
+    public void setIPLatitude(Double IPLatitude) {
+        this.IPLatitude = IPLatitude;
+    }
+
+    public Double getIPLongitude() {
+        return IPLongitude;
+    }
+
+    public void setIPLongitude(Double IPLongitude) {
+        this.IPLongitude = IPLongitude;
+    }
 }

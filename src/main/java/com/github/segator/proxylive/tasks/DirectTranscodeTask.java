@@ -84,6 +84,11 @@ public class DirectTranscodeTask implements IMultiplexerStreamer {
     }
 
     @Override
+    public String getSource() {
+        return url;
+    }
+
+    @Override
     public void run() {
         try {
             System.out.println("[" + getIdentifier() + "] Start Transcode");
@@ -119,7 +124,7 @@ public class DirectTranscodeTask implements IMultiplexerStreamer {
                     } catch (Exception e) {
                         if (!isTerminated()) {
                             System.out.println("Error:" + e.getMessage());
-                            Logger.getLogger(TranscodeTask.class.getName()).log(Level.SEVERE, null, e);
+                            Logger.getLogger(DirectTranscodeTask.class.getName()).log(Level.SEVERE, null, e);
                             internalCrash = true;
                         }
                     }
@@ -260,5 +265,9 @@ public class DirectTranscodeTask implements IMultiplexerStreamer {
     @Override
     public Date startTaskDate() {
         return runDate;
+    }
+
+    public String getProfile() {
+        return profile;
     }
 }

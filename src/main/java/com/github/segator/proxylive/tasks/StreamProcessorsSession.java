@@ -25,12 +25,20 @@ package com.github.segator.proxylive.tasks;
 
 import com.github.segator.proxylive.ProxyLiveUtils;
 import com.github.segator.proxylive.entity.ClientInfo;
+import com.github.segator.proxylive.entity.GEOInfo;
 import com.github.segator.proxylive.processor.DirectHLSTranscoderStreamProcessor;
 import com.github.segator.proxylive.processor.IStreamProcessor;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.*;
 import javax.servlet.http.HttpServletRequest;
 
+import com.github.segator.proxylive.service.GeoIPService;
+import com.maxmind.geoip2.DatabaseReader;
+import com.maxmind.geoip2.model.AnonymousIpResponse;
+import com.maxmind.geoip2.model.CityResponse;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -41,6 +49,9 @@ import org.springframework.web.util.UriComponentsBuilder;
  */
 @Service
 public class StreamProcessorsSession {
+
+    @Autowired
+    private GeoIPService geoIPService;
 
     private final List<ClientInfo> clientInfoList;
     private final Map<String, Long> cacheClientsLogged;
@@ -100,7 +111,7 @@ public class StreamProcessorsSession {
         return clientInfoList;
     }
 
-    public synchronized ClientInfo manage(IStreamProcessor iStreamProcessor, HttpServletRequest request) {
+    public synchronized ClientInfo manage(IStreamProcessor iStreamProcessor, HttpServletRequest request) throws UnknownHostException {
         ClientInfo client = new ClientInfo();
         request.getQueryString();
         MultiValueMap<String, String> parameters = UriComponentsBuilder.fromUriString(ProxyLiveUtils.getURL(request)).build().getQueryParams();
@@ -109,9 +120,24 @@ public class StreamProcessorsSession {
             clientUser = "guest";
         }
         client.setClientUser(clientUser);
-        client.setIp(ProxyLiveUtils.getRequestIP(request));
+        client.setIp(InetAddress.getByName(ProxyLiveUtils.getRequestIP(request)));
         client.setBrowserInfo(ProxyLiveUtils.getBrowserInfo(request));
         client = addClientInfo(client);
+        try {
+            DatabaseReader geoDBReader = geoIPService.geoGEOInfoReader();
+            CityResponse cityResponse = geoDBReader.city(client.getIp());
+
+            if(cityResponse.getLocation()!=null){
+                GEOInfo geoInfo = new GEOInfo();
+                geoInfo.setCity(cityResponse.getCity());
+                geoInfo.setCountry(cityResponse.getCountry());
+                geoInfo.setLocation(cityResponse.getLocation());
+                client.setGeoInfo(geoInfo);
+            }
+
+        }catch(Exception ex ){
+            System.err.println(ex);
+        }
         if (!client.getStreams().contains(iStreamProcessor)) {
             client.getStreams().add(iStreamProcessor);
         }

@@ -104,6 +104,11 @@ public class HLSDirectTask implements IStreamTask {
     }
 
     @Override
+    public String getSource() {
+        return url;
+    }
+
+    @Override
     public boolean isCrashed() {
         return crashed;
     }
@@ -179,7 +184,7 @@ public class HLSDirectTask implements IStreamTask {
         } catch (Exception ex) {
             if (!isTerminated()) {
                 System.out.println("Error:" + ex.getMessage());
-                Logger.getLogger(HLSTask.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(HLSDirectTask.class.getName()).log(Level.SEVERE, null, ex);
                 internalCrash = true;
             }
         } finally {
