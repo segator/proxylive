@@ -262,7 +262,7 @@ java -jar proxylive.jar
 - [X] Custom Backends as source
 - [X] QSV/VAAPI Support (Hardware transcoding)
 - [ ] NVENC Support (Hardware Nvidia Transcoding)
-- [ ] Prometheus Support
+- [X] Prometheus Support
 - [ ] Fluend support
 - [X] UDP Input
 - [ ] RTMP Input
