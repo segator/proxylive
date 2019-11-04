@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.segator.proxylive.config.GitSource;
 import com.github.segator.proxylive.config.ProxyLiveConfiguration;
 import com.github.segator.proxylive.entity.Channel;
+import com.github.segator.proxylive.entity.ChannelSource;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.eclipse.jgit.api.*;
@@ -13,6 +14,10 @@ import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.transport.TrackingRefUpdate;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 
@@ -20,6 +25,8 @@ import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import java.io.*;
 
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -119,10 +126,60 @@ public class ChannelURLService implements ChannelService {
                 });
             }
             readPicons(channels);
+            //fix TVH Urls
+            for (Channel channel:channels) {
+                for(ChannelSource channelSource: channel.getSources()){
+                    String sourceURL= channelSource.getUrl();
+                    if(sourceURL.startsWith("tvh://") || sourceURL.startsWith("tvhs://")){
+                        sourceURL = sourceURL.replace("tvh://","http://");
+                        URL tvhURL = new URL(sourceURL);
+                        tvhURL = new URL(tvhURL.getProtocol()+"://"+ tvhURL.getUserInfo() + "@"+tvhURL.getHost()+":"+tvhURL.getPort()+"/");
+
+                        String[] tvhURLSplit = sourceURL.split("/");
+                        String tvhUUID = tvhURLSplit[tvhURLSplit.length-1];
+                        String findType = tvhURLSplit[tvhURLSplit.length-2];
+
+                        switch(findType){
+                            case "channel":
+                                JSONObject jsonResponse = getJSONResponse(new URL(tvhURL,"/api/channel/list"));
+                                JSONArray tvhChannelList = (JSONArray) jsonResponse.get("entries");
+                                for (Object obj: tvhChannelList) {
+                                    JSONObject tvhChannelRefObj = (JSONObject) obj;
+                                    if(((String)tvhChannelRefObj.get("val")).toLowerCase().trim().equals(tvhUUID.toLowerCase().trim())){
+                                        channelSource.setUrl(new URL(tvhURL,"/stream/channel/"+tvhChannelRefObj.get("key")).toString());
+                                        break;
+                                    }
+                                }
+                                break;
+
+                        }
+
+
+                    }
+                }
+            }
             this.channels = channels;
             System.out.println("Channels loaded");
             lastUpdate = new Date().getTime();
         }
+    }
+
+    private JSONObject getJSONResponse(URL url) throws IOException, ParseException {
+        JSONParser jsonParser = new JSONParser();
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        connection.setReadTimeout(10000);
+        if (url.getUserInfo() != null) {
+            String basicAuth = "Basic " + new String(Base64.getEncoder().encode(url.getUserInfo().getBytes()));
+            connection.setRequestProperty("Authorization", basicAuth);
+        }
+        connection.setRequestMethod("GET");
+        connection.connect();
+        if (connection.getResponseCode() != 200) {
+            throw new IOException("Error on open stream:" + url);
+        }
+        JSONObject returnObject = (JSONObject) jsonParser.parse(new InputStreamReader(connection.getInputStream(), "UTF-8"));
+        connection.disconnect();
+        return returnObject;
     }
 
     private void readPicons(List<Channel> channels) throws IOException {
