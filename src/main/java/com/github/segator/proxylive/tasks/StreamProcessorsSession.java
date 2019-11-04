@@ -66,9 +66,9 @@ public class StreamProcessorsSession {
     public  void addCacheClient(String user,boolean logged) {
         synchronized (this) {
             if (logged) {
-                cacheClientsLogged.put(user, new Date().getTime() + 1800000); //30 min cache
+                cacheClientsLogged.put(user, new Date().getTime() + 86400000); //24h cache
             } else {
-                cacheClientsFailed.put(user, new Date().getTime() + 5000); //5s cache
+                cacheClientsFailed.put(user, new Date().getTime() + 15000); //15s cache
             }
         }
     }

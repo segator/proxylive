@@ -143,12 +143,17 @@ public class ChannelURLService implements ChannelService {
                             case "channel":
                                 JSONObject jsonResponse = getJSONResponse(new URL(tvhURL,"/api/channel/list"));
                                 JSONArray tvhChannelList = (JSONArray) jsonResponse.get("entries");
+                                boolean found=false;
                                 for (Object obj: tvhChannelList) {
                                     JSONObject tvhChannelRefObj = (JSONObject) obj;
                                     if(((String)tvhChannelRefObj.get("val")).toLowerCase().trim().equals(tvhUUID.toLowerCase().trim())){
+                                        found=true;
                                         channelSource.setUrl(new URL(tvhURL,"/stream/channel/"+tvhChannelRefObj.get("key")).toString());
                                         break;
                                     }
+                                }
+                                if(!found){
+                                    throw new Exception("Channel " + tvhUUID + " not found.. canceling update");
                                 }
                                 break;
 

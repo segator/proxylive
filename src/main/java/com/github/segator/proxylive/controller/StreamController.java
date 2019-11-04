@@ -135,7 +135,7 @@ public class StreamController {
         IStreamMultiplexerProcessor iStreamProcessor = (IStreamMultiplexerProcessor) context.getBean("StreamProcessor", ProxyLiveConstants.STREAM_MODE, channel.getName(), channel, profile);
         ClientInfo client = streamProcessorsSession.manage(iStreamProcessor, request);
 
-        System.out.println("require connection from : " + client);
+        System.out.println("Open Stream" + channelID + " by " + client);
         iStreamProcessor.start();
         if (iStreamProcessor.isConnected()) {
             response.setHeader("Connection", "close");
@@ -186,8 +186,7 @@ public class StreamController {
             streamProcessorsSession.removeClientInfo(client, iStreamProcessor);
             response.setStatus(HttpStatus.NOT_FOUND.value());
         }
-        System.out.println("User Close:" + client);
-
+        System.out.println("Close Stream " + channelID  + " by " + client.getClientUser());
     }
 
     @RequestMapping(value = "/crossdomain.xml", method = RequestMethod.GET)

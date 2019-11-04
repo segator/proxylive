@@ -47,6 +47,9 @@ public class PlexAuthenticationService implements AuthenticationService {
         PlexAuthentication plexAuthConfig = configuration.getAuthentication().getPlex();
         //Check user pass is valid
         JSONObject userData = getUserData(user, password);
+        if(userData==null){
+            return false;
+        }
         String userID = (String) userData.get("id").toString();
         //Check the user is registered to our plex server and have channels enabled
         URL url = new URL(String.format("https://%s:%s@plex.tv/api/users", URLEncoder.encode(plexAuthConfig.getAdminUser(),"UTF-8"), URLEncoder.encode(plexAuthConfig.getAdminPass(),"UTF-8")));
@@ -89,7 +92,7 @@ public class PlexAuthenticationService implements AuthenticationService {
         connection.setRequestMethod("POST");
         connection.connect();
         if (connection.getResponseCode() != 201) {
-            throw new IOException(String.format("Cannot login as plex %s:%s", user, connection.getResponseCode()));
+            return null;
         }
         JSONParser jsonParser = new JSONParser();
         JSONObject response = (JSONObject) jsonParser.parse(new InputStreamReader(connection.getInputStream(), "UTF-8"));

@@ -61,9 +61,11 @@ public class PrometheusMetrics implements MeterBinder {
             }
 
             for (IStreamProcessor stream:   clientInfo.getStreams()) {
-                List<Tag> tagsClientStream = new ArrayList(tagsClientInfo);
-                tagsClientStream.add(Tag.of("task_identifier",stream.getTask().getIdentifier()));
-                listOfMetrics.add(Gauge.builder("client_stream_info",this, value -> 0).description("task status").tags(tagsClientStream).baseUnit("unit").register(meterRegistry));
+                if(stream.getTask()!=null && stream.getTask().getIdentifier()!=null) {
+                    List<Tag> tagsClientStream = new ArrayList(tagsClientInfo);
+                    tagsClientStream.add(Tag.of("task_identifier", stream.getTask().getIdentifier()));
+                    listOfMetrics.add(Gauge.builder("client_stream_info", this, value -> 0).description("task status").tags(tagsClientStream).baseUnit("unit").register(meterRegistry));
+                }
             }
         }
         Collection<IStreamTask> tasks = tasksProcessor.getOperationMap().values();

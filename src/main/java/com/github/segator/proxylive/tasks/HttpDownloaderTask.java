@@ -99,6 +99,9 @@ public class HttpDownloaderTask implements IMultiplexerStreamer {
         return url;
     }
 
+    private String getStringIdentifier(String message){
+        return "[id:" + getIdentifier() + ",priority:"+sourcePriority+"] " + message + " -- " + url;
+    }
     @Override
     public void run() {
         runDate = new Date();
@@ -110,7 +113,7 @@ public class HttpDownloaderTask implements IMultiplexerStreamer {
                 videoInputStream = new UDPInputStream(url);
             }
 
-            System.out.println("[" + getIdentifier() + "] Get stream");
+            System.out.println(getStringIdentifier("Get Stream"));
             if (videoInputStream.connect()) {
                 long lastReaded  = new Date().getTime();
                 while (!terminate) {
@@ -125,10 +128,10 @@ public class HttpDownloaderTask implements IMultiplexerStreamer {
                     }
                 }
             }else{
-                throw new Exception ("Imposible to connect to:"+url);
+                throw new Exception (getStringIdentifier("Impossible to connect"));
             }
         } catch (Exception ex) {
-            System.out.println(ex.getMessage());
+            System.out.println(getStringIdentifier(ex.getMessage()));
 
             if (crashTimes > 2 || terminate) {
                 crashed = true;
