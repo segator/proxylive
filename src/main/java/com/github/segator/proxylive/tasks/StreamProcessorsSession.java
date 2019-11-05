@@ -128,20 +128,22 @@ public class StreamProcessorsSession {
         client.setIp(InetAddress.getByName(ProxyLiveUtils.getRequestIP(request)));
         client.setBrowserInfo(ProxyLiveUtils.getBrowserInfo(request));
         client = addClientInfo(client);
-        try {
-            DatabaseReader geoDBReader = geoIPService.geoGEOInfoReader();
-            CityResponse cityResponse = geoDBReader.city(client.getIp());
+        if (geoIPService.isServiceEnabled()) {
+            try {
+                DatabaseReader geoDBReader = geoIPService.geoGEOInfoReader();
+                CityResponse cityResponse = geoDBReader.city(client.getIp());
 
-            if (cityResponse.getLocation() != null) {
-                GEOInfo geoInfo = new GEOInfo();
-                geoInfo.setCity(cityResponse.getCity());
-                geoInfo.setCountry(cityResponse.getCountry());
-                geoInfo.setLocation(cityResponse.getLocation());
-                client.setGeoInfo(geoInfo);
+                if (cityResponse.getLocation() != null) {
+                    GEOInfo geoInfo = new GEOInfo();
+                    geoInfo.setCity(cityResponse.getCity());
+                    geoInfo.setCountry(cityResponse.getCountry());
+                    geoInfo.setLocation(cityResponse.getLocation());
+                    client.setGeoInfo(geoInfo);
+                }
+            }catch(AddressNotFoundException anfe){
+            }catch(Exception ex ){
+                logger.error("Error parsing user geodata", ex);
             }
-        }catch(AddressNotFoundException anfe){
-        }catch(Exception ex ){
-            logger.error("Error parsing user geodata",ex);
         }
         if (!client.getStreams().contains(iStreamProcessor)) {
             client.getStreams().add(iStreamProcessor);

@@ -66,9 +66,6 @@ public class WebInputStream extends VideoInputStream{
         initializeConnection();
         connection.connect();
         boolean connected = connection.getResponseCode() == 200 || connection.getResponseCode() == 204;
-        if(!connected){
-            logger.debug("response code of " + url.toString() + " is " + connection.getResponseCode());
-        }
         httpInputStream = new WithoutBlockingInputStream(connection.getInputStream());
         return connected;
     }

@@ -48,17 +48,25 @@ public class PrometheusMetrics implements MeterBinder {
             tagsClientInfo.add(Tag.of("user",clientInfo.getClientUser()));
             tagsClientInfo.add(Tag.of("ip",clientInfo.getIp().getHostAddress()));
             tagsClientInfo.add(Tag.of("user-agent",clientInfo.getBrowserInfo()));
-            if(clientInfo.getGeoInfo()!=null) {
+
+            if(clientInfo.getGeoInfo()!=null && clientInfo.getGeoInfo().getCity()!=null && clientInfo.getGeoInfo().getCity().getName()!=null) {
                 tagsClientInfo.add(Tag.of("ip-city", clientInfo.getGeoInfo().getCity().getName()));
+            }else{
+                tagsClientInfo.add(Tag.of("ip-city", "Not found"));
+            }
+            if(clientInfo.getGeoInfo()!=null && clientInfo.getGeoInfo().getCountry()!=null && clientInfo.getGeoInfo().getCountry().getName()!=null) {
                 tagsClientInfo.add(Tag.of("ip-country", clientInfo.getGeoInfo().getCountry().getName()));
+            }else{
+                tagsClientInfo.add(Tag.of("ip-country", "Not found"));
+            }
+            if(clientInfo.getGeoInfo()!=null && clientInfo.getGeoInfo().getLocation()!=null) {
                 tagsClientInfo.add(Tag.of("ip-latitude", clientInfo.getGeoInfo().getLocation().getLatitude().toString()));
                 tagsClientInfo.add(Tag.of("ip-longitude", clientInfo.getGeoInfo().getLocation().getLongitude().toString()));
             }else{
-                tagsClientInfo.add(Tag.of("ip-city", "Not found"));
-                tagsClientInfo.add(Tag.of("ip-country", "Not found"));
                 tagsClientInfo.add(Tag.of("ip-latitude", "0"));
                 tagsClientInfo.add(Tag.of("ip-longitude", "0"));
             }
+
 
             for (IStreamProcessor stream:   clientInfo.getStreams()) {
                 if(stream.getTask()!=null && stream.getTask().getIdentifier()!=null) {

@@ -28,6 +28,10 @@ public class GeoIPService {
     @Autowired
     private ProxyLiveConfiguration config;
 
+    public boolean isServiceEnabled(){
+        return config.getGeoIP().isEnabled();
+    }
+
     @Scheduled(fixedDelay = 86400 * 1000) //Every 24H
     @PostConstruct
     private void downloadIPLocationDatabase() throws Exception {
