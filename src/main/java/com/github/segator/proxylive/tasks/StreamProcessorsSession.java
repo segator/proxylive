@@ -24,6 +24,7 @@
 package com.github.segator.proxylive.tasks;
 
 import com.github.segator.proxylive.ProxyLiveUtils;
+import com.github.segator.proxylive.controller.StreamController;
 import com.github.segator.proxylive.entity.ClientInfo;
 import com.github.segator.proxylive.entity.GEOInfo;
 import com.github.segator.proxylive.processor.DirectHLSTranscoderStreamProcessor;
@@ -36,8 +37,11 @@ import javax.servlet.http.HttpServletRequest;
 
 import com.github.segator.proxylive.service.GeoIPService;
 import com.maxmind.geoip2.DatabaseReader;
+import com.maxmind.geoip2.exception.AddressNotFoundException;
 import com.maxmind.geoip2.model.AnonymousIpResponse;
 import com.maxmind.geoip2.model.CityResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.MultiValueMap;
@@ -50,6 +54,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 @Service
 public class StreamProcessorsSession {
 
+    private final Logger logger = LoggerFactory.getLogger(StreamProcessorsSession.class);
     @Autowired
     private GeoIPService geoIPService;
 
@@ -127,16 +132,16 @@ public class StreamProcessorsSession {
             DatabaseReader geoDBReader = geoIPService.geoGEOInfoReader();
             CityResponse cityResponse = geoDBReader.city(client.getIp());
 
-            if(cityResponse.getLocation()!=null){
+            if (cityResponse.getLocation() != null) {
                 GEOInfo geoInfo = new GEOInfo();
                 geoInfo.setCity(cityResponse.getCity());
                 geoInfo.setCountry(cityResponse.getCountry());
                 geoInfo.setLocation(cityResponse.getLocation());
                 client.setGeoInfo(geoInfo);
             }
-
+        }catch(AddressNotFoundException anfe){
         }catch(Exception ex ){
-            System.err.println(ex);
+            logger.error("Error parsing user geodata",ex);
         }
         if (!client.getStreams().contains(iStreamProcessor)) {
             client.getStreams().add(iStreamProcessor);

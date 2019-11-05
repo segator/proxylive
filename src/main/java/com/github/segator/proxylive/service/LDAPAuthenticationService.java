@@ -24,6 +24,8 @@ import javax.naming.ldap.InitialLdapContext;
 import javax.naming.ldap.LdapContext;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.ParseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -31,7 +33,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  * @author isaac
  */
 public class LDAPAuthenticationService implements AuthenticationService {
-
+    private final Logger logger = LoggerFactory.getLogger(LDAPAuthenticationService.class);
     private LDAPAutentication ldapAuthConfig;
     @Autowired
     private ProxyLiveConfiguration configuration;
@@ -63,7 +65,7 @@ public class LDAPAuthenticationService implements AuthenticationService {
         
         //3) get the users Primary Group
         String primaryGroupName = findGroupBySID(ctx, ldapAuthConfig.getSearchBase(), primaryGroupSID);
-        System.out.println(primaryGroupName);
+        logger.trace(primaryGroupName);
 
     }
 
@@ -82,7 +84,7 @@ public class LDAPAuthenticationService implements AuthenticationService {
 
             //make sure there is not another item available, there should be only 1 match
             if (results.hasMoreElements()) {
-                System.err.println("Matched multiple users for the accountName: " + accountName);
+                logger.warn("Matched multiple users for the accountName: " + accountName);
                 return null;
             }
         }
@@ -113,7 +115,7 @@ public class LDAPAuthenticationService implements AuthenticationService {
 
             //make sure there is not another item available, there should be only 1 match
             if (results.hasMoreElements()) {
-                System.err.println("Matched multiple groups for the group with SID: " + sid);
+                logger.warn("Matched multiple groups for the group with SID: " + sid);
                 return null;
             } else {
                 return (String) searchResult.getAttributes().get("sAMAccountName").get();

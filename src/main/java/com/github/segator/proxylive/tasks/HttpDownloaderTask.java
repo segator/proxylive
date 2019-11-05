@@ -37,6 +37,8 @@ import java.util.Date;
 import java.util.Objects;
 import javax.annotation.PostConstruct;
 import com.github.segator.proxylive.config.ProxyLiveConfiguration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -44,7 +46,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  * @author Isaac Aymerich <isaac.aymerich@gmail.com>
  */
 public class HttpDownloaderTask implements IMultiplexerStreamer {
-
+    private final Logger logger = LoggerFactory.getLogger(HttpDownloaderTask.class);
     private String url;
     private final Channel channel;
     private Date runDate;
@@ -113,7 +115,7 @@ public class HttpDownloaderTask implements IMultiplexerStreamer {
                 videoInputStream = new UDPInputStream(url);
             }
 
-            System.out.println(getStringIdentifier("Get Stream"));
+            logger.debug(getStringIdentifier("Get Stream"));
             if (videoInputStream.connect()) {
                 long lastReaded  = new Date().getTime();
                 while (!terminate) {
@@ -131,7 +133,7 @@ public class HttpDownloaderTask implements IMultiplexerStreamer {
                 throw new Exception (getStringIdentifier("Impossible to connect"));
             }
         } catch (Exception ex) {
-            System.out.println(getStringIdentifier(ex.getMessage()));
+            logger.error(getStringIdentifier(ex.getMessage()));
 
             if (crashTimes > 2 || terminate) {
                 crashed = true;

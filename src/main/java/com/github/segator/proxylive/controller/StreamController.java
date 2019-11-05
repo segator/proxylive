@@ -34,6 +34,7 @@ import com.github.segator.proxylive.profiler.FFmpegProfilerService;
 import com.github.segator.proxylive.service.ChannelService;
 import com.github.segator.proxylive.service.EPGService;
 import com.github.segator.proxylive.service.TokensService;
+import com.github.segator.proxylive.tasks.HttpDownloaderTask;
 import com.github.segator.proxylive.tasks.StreamProcessorsSession;
 
 import java.io.*;
@@ -51,6 +52,8 @@ import org.apache.commons.io.IOUtils;
 import static org.hibernate.validator.internal.util.CollectionHelper.newArrayList;
 
 import org.json.simple.parser.ParseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.core.io.Resource;
@@ -73,6 +76,8 @@ import org.springframework.web.util.UriComponentsBuilder;
  */
 @Controller
 public class StreamController {
+
+    private final Logger logger = LoggerFactory.getLogger(StreamController.class);
 
     @Autowired
     private ApplicationContext context;
@@ -135,7 +140,7 @@ public class StreamController {
         IStreamMultiplexerProcessor iStreamProcessor = (IStreamMultiplexerProcessor) context.getBean("StreamProcessor", ProxyLiveConstants.STREAM_MODE, channel.getName(), channel, profile);
         ClientInfo client = streamProcessorsSession.manage(iStreamProcessor, request);
 
-        System.out.println("Open Stream" + channelID + " by " + client);
+        logger.debug("Open Stream " + channelID + " by " + client.getClientUser());
         iStreamProcessor.start();
         if (iStreamProcessor.isConnected()) {
             response.setHeader("Connection", "close");
@@ -186,7 +191,7 @@ public class StreamController {
             streamProcessorsSession.removeClientInfo(client, iStreamProcessor);
             response.setStatus(HttpStatus.NOT_FOUND.value());
         }
-        System.out.println("Close Stream " + channelID  + " by " + client.getClientUser());
+        logger.debug("Close Stream " + channelID  + " by " + client.getClientUser());
     }
 
     @RequestMapping(value = "/crossdomain.xml", method = RequestMethod.GET)
@@ -340,9 +345,9 @@ public class StreamController {
         ClientInfo client = streamProcessorsSession.manage(hlsStreamProcessor, request);
         //if (hlsStreamProcessor.isConnected()) {
             file = file.toLowerCase();
-            System.out.println("Client require:" + file + " after " + (new Date().getTime() - now)/1000);
+            logger.debug("Client require:" + file + " after " + (new Date().getTime() - now)/1000);
             InputStream downloadFile = getFileToUpload(file, hlsStreamProcessor, request,response);
-            System.out.println("Client get Stream:" + file + " after " + (new Date().getTime() - now)/1000);
+            logger.debug("Client get Stream:" + file + " after " + (new Date().getTime() - now)/1000);
             //probably the stream is not ready yet.
             //file.endsWith("m3u8") &&
             /*if(downloadFile==null){
@@ -376,7 +381,7 @@ public class StreamController {
             } else {
                 response.setStatus(404);
             }
-        System.out.println("Client exit("+response.getStatus()+") request:" + file + " after " + (new Date().getTime() - now)/1000);
+        logger.debug("Client exit("+response.getStatus()+") request:" + file + " after " + (new Date().getTime() - now)/1000);
         //} else {
             //    response.setStatus(404);
             //}
@@ -435,7 +440,7 @@ public class StreamController {
                     return new MediaType("application","dash+xml");
             }
         } catch (Exception e) {
-            e.printStackTrace();
+           logger.error("Error",e);
         }
         return null;
     }

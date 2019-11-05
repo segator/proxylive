@@ -23,9 +23,13 @@ import javax.annotation.PostConstruct;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+
+import com.github.segator.proxylive.tasks.DirectTranscodeTask;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -38,7 +42,7 @@ import org.xml.sax.SAXException;
  * @author isaac
  */
 public class PlexAuthenticationService implements AuthenticationService {
-
+    Logger logger = LoggerFactory.getLogger(PlexAuthenticationService.class);
     @Autowired
     private ProxyLiveConfiguration configuration;
 
@@ -128,15 +132,15 @@ public class PlexAuthenticationService implements AuthenticationService {
             factory = DocumentBuilderFactory.newInstance();
             builder = factory.newDocumentBuilder();
         } catch (ParserConfigurationException e) {
-            e.printStackTrace();
+            logger.error("Error",e);
         }
 
         try {
             ret = builder.parse(new InputSource(in));
         } catch (SAXException e) {
-            e.printStackTrace();
+            logger.error("Error",e);
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error("Error",e);
         }
         return ret;
     }

@@ -23,6 +23,8 @@
  */
 package com.github.segator.proxylive.stream;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.IOException;
@@ -38,7 +40,7 @@ import java.util.Date;
  * @author Isaac Aymerich <isaac.aymerich@gmail.com>
  */
 public class WebInputStream extends VideoInputStream{
-
+    private final Logger logger = LoggerFactory.getLogger(WebInputStream.class);
     private final URL url;
     private HttpURLConnection connection;
     private InputStream httpInputStream;
@@ -65,7 +67,7 @@ public class WebInputStream extends VideoInputStream{
         connection.connect();
         boolean connected = connection.getResponseCode() == 200 || connection.getResponseCode() == 204;
         if(!connected){
-            System.out.println("response code of " + url.toString() + " is " + connection.getResponseCode());
+            logger.debug("response code of " + url.toString() + " is " + connection.getResponseCode());
         }
         httpInputStream = new WithoutBlockingInputStream(connection.getInputStream());
         return connected;

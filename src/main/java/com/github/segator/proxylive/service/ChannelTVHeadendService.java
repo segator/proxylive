@@ -5,12 +5,15 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.github.segator.proxylive.config.ProxyLiveConfiguration;
 import com.github.segator.proxylive.entity.Channel;
 import com.github.segator.proxylive.entity.ChannelSource;
+import com.github.segator.proxylive.stream.UDPInputStream;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 
@@ -27,7 +30,7 @@ import java.nio.file.Paths;
 import java.util.*;
 
 public class ChannelTVHeadendService implements ChannelService {
-
+    private final Logger logger = LoggerFactory.getLogger(ChannelTVHeadendService.class);
     @Autowired
     private ProxyLiveConfiguration config;
 
@@ -62,7 +65,7 @@ public class ChannelTVHeadendService implements ChannelService {
     }
 
     private List<Channel> buildChannels() throws Exception {
-        System.out.println("Updating Channel Info");
+        logger.info("Updating Channel Info");
         List<Channel> channels=new ArrayList();
         Path piconsPath = Files.createTempDirectory("proxylivePicons");
         for (Object ochannel : cachedChannelList) {
@@ -73,7 +76,7 @@ public class ChannelTVHeadendService implements ChannelService {
             channel.setId((String)channelObject.get("uuid"));
             //tvheadend channel match ID with EPG extracted from tvh
             channel.setEpgID(channel.getId());
-            System.out.println("Updating Channel:"+channel.getId());
+            logger.debug("Updating Channel:"+channel.getId());
 
             //Channel number
             String channelNumber="";
@@ -121,7 +124,7 @@ public class ChannelTVHeadendService implements ChannelService {
             FileUtils.deleteDirectory(tempLogoFilePath);
         }
         tempLogoFilePath = piconsPath.toFile();
-        System.out.println("Updating Channel Info Completed");
+        logger.info("Updating Channel Info Completed");
         //ObjectMapper mapper = new ObjectMapper();
         //mapper.enable(SerializationFeature.INDENT_OUTPUT);
         //mapper.writeValue(new File("D:\\file.json"), channels);
@@ -131,7 +134,7 @@ public class ChannelTVHeadendService implements ChannelService {
 
     @PreDestroy
     private void cleanup() throws IOException {
-        System.out.println("cleaning picons directory");
+        logger.debug("cleaning picons directory");
         if (tempLogoFilePath != null && tempLogoFilePath.exists()) {
             FileUtils.deleteDirectory(tempLogoFilePath);
         }
@@ -175,7 +178,7 @@ public class ChannelTVHeadendService implements ChannelService {
     @Scheduled(fixedDelay = 60 * 1000) //Every Minute
     @PostConstruct
     public void getDataFromTvheadend() throws Exception {
-        if(new Date().getTime()-lastUpdate>+(config.getSource().getChannels().getRefresh()*1000)) {
+        if(new Date().getTime()-lastUpdate>+(config.getSource().getEpg().getRefresh()*1000)) {
             //Get Channels, Tags
             getTvheadendData();
             channels = buildChannels();

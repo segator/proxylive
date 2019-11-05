@@ -23,6 +23,10 @@
  */
 package com.github.segator.proxylive.stream;
 
+import com.github.segator.proxylive.service.GeoIPService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
@@ -33,7 +37,7 @@ import java.nio.channels.InterruptedByTimeoutException;
  * @author Isaac Aymerich <isaac.aymerich@gmail.com>
  */
 public class ClientBroadcastedInputStream extends InputStream {
-
+    private final Logger logger = LoggerFactory.getLogger(ClientBroadcastedInputStream.class);
     private final ByteBuffer sourceByteBuffer, clientByteBuffer;
     private final String id;
 
@@ -69,7 +73,7 @@ public class ClientBroadcastedInputStream extends InputStream {
         }
         readed = clientByteBuffer.get();
         if (clientByteBuffer.position() == sourceByteBuffer.limit()) {
-            System.out.println("jump" + id);
+            logger.trace("jump" + id);
             clientByteBuffer.rewind();
         }
         return readed & 0xFF;

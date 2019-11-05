@@ -6,6 +6,8 @@ import com.maxmind.geoip2.DatabaseReader;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.io.IOUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -20,6 +22,7 @@ import java.util.zip.GZIPInputStream;
 
 @Service
 public class GeoIPService {
+    private final Logger logger = LoggerFactory.getLogger(GeoIPService.class);
     private File tmpGEOIPFile;
     private DatabaseReader geoIPDB;
     @Autowired
@@ -29,7 +32,7 @@ public class GeoIPService {
     @PostConstruct
     private void downloadIPLocationDatabase() throws Exception {
         if(config.getGeoIP().isEnabled()){
-            System.out.println("Refreshing GEOIP Database");
+            logger.info("Downloading GEOIP Database from: "+config.getGeoIP().getUrl());
 
             File tmpGEOIPFileRound = File.createTempFile("geoIP", "mmdb");
             FileOutputStream fos = new FileOutputStream(tmpGEOIPFileRound);

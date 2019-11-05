@@ -29,6 +29,8 @@ import com.github.segator.proxylive.processor.IStreamProcessor;
 import java.util.*;
 import java.util.Map.Entry;
 import com.github.segator.proxylive.config.ProxyLiveConfiguration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -39,8 +41,8 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class ProcessorTasks {
-    
 
+    Logger logger = LoggerFactory.getLogger(ProcessorTasks.class);
     private final Map<Thread, IStreamTask> httpSourceStreamTasks;
     private final Map<Thread, IStreamTask> transcodeTasks;
     private final Map<Thread, IStreamTask> directTranscodeTasks;
@@ -185,7 +187,7 @@ public class ProcessorTasks {
                 iStreamTask.getSourceProcessor().stop(false);
             }
         } catch (Exception ex) {
-            ex.printStackTrace();
+            logger.error("Error",ex);
         }
     }
 }

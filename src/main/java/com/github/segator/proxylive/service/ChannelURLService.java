@@ -6,6 +6,7 @@ import com.github.segator.proxylive.config.GitSource;
 import com.github.segator.proxylive.config.ProxyLiveConfiguration;
 import com.github.segator.proxylive.entity.Channel;
 import com.github.segator.proxylive.entity.ChannelSource;
+import com.github.segator.proxylive.tasks.StreamProcessorsSession;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.eclipse.jgit.api.*;
@@ -18,6 +19,8 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 
@@ -34,7 +37,7 @@ import java.nio.file.Paths;
 import java.util.*;
 
 public class ChannelURLService implements ChannelService {
-
+    private final Logger logger = LoggerFactory.getLogger(ChannelURLService.class);
     @Autowired
     private ProxyLiveConfiguration config;
 
@@ -71,7 +74,7 @@ public class ChannelURLService implements ChannelService {
     @Scheduled(fixedDelay = 60 * 1000) //Every Minute
     @PostConstruct
     public void getChannelInfo() throws Exception {
-        if(new Date().getTime()-lastUpdate>+(config.getSource().getChannels().getRefresh()*1000)) {
+        if(new Date().getTime()-lastUpdate>+(config.getSource().getEpg().getRefresh()*1000)) {
             ObjectMapper objectMapper = new ObjectMapper();
             List<Channel> channels=null;
             //URL
@@ -85,7 +88,7 @@ public class ChannelURLService implements ChannelService {
             }else if(config.getSource().getChannels().getGit()!=null){
                 //not initialized yet
                 if(git==null){
-                    System.out.println("Loading Channels from: "+config.getSource().getChannels().getGit().getRepository());
+                    logger.info("Loading Channels from: "+config.getSource().getChannels().getGit().getRepository());
                     File tmpGitPath = Files.createTempDirectory("proxyliveGit").toFile();
                     GitSource gitSource = config.getSource().getChannels().getGit();
                     CloneCommand cloneCommand = Git.cloneRepository();
@@ -107,11 +110,11 @@ public class ChannelURLService implements ChannelService {
                     }
                     Collection<TrackingRefUpdate> commitsUpdated = pulLResult.getFetchResult().getTrackingRefUpdates();
                     if (commitsUpdated.size() > 0) {
-                        System.out.println("Channels modified, updating..");
+                        logger.info("Channels modified, updating..");
                         RevWalk walk = new RevWalk(git.getRepository());
                         for (TrackingRefUpdate commitRef : commitsUpdated) {
                             RevCommit commit = walk.parseCommit(commitRef.getNewObjectId());
-                            System.out.println("(" + commit.getAuthorIdent().getName() + "<" + commit.getAuthorIdent().getEmailAddress() + ">) " + commit.getFullMessage());
+                            logger.info("(" + commit.getAuthorIdent().getName() + "<" + commit.getAuthorIdent().getEmailAddress() + ">) " + commit.getFullMessage());
                         }
                     }else{
                         //no changes, don't need to update
@@ -164,7 +167,7 @@ public class ChannelURLService implements ChannelService {
                 }
             }
             this.channels = channels;
-            System.out.println("Channels loaded");
+            logger.info("Channels loaded");
             lastUpdate = new Date().getTime();
         }
     }
@@ -216,7 +219,7 @@ public class ChannelURLService implements ChannelService {
 
     @PreDestroy
     private void cleanup() throws IOException {
-        System.out.println("cleaning picons directory");
+        logger.debug("cleaning picons directory");
         if (tempLogoFilePath != null && tempLogoFilePath.exists()) {
             FileUtils.deleteDirectory(tempLogoFilePath);
         }

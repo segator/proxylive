@@ -23,44 +23,40 @@
  */
 package com.github.segator.proxylive.tasks;
 
-        import com.github.segator.proxylive.ProxyLiveUtils;
-        import com.github.segator.proxylive.config.ProxyLiveConfiguration;
-        import com.github.segator.proxylive.entity.Channel;
-        import com.github.segator.proxylive.processor.IStreamProcessor;
-        import com.github.segator.proxylive.profiler.FFmpegProfilerService;
-        import com.github.segator.proxylive.stream.WithoutBlockingInputStream;
-        import java.io.ByteArrayInputStream;
-        import java.io.File;
-        import java.io.FileInputStream;
-        import java.io.FileNotFoundException;
-        import java.io.IOException;
-        import java.io.InputStream;
-        import java.net.URISyntaxException;
-        import java.nio.file.Files;
-        import java.nio.file.Path;
-        import java.nio.file.Paths;
-        import java.text.SimpleDateFormat;
-        import java.util.Date;
-        import java.util.HashMap;
-        import java.util.List;
-        import java.util.Map;
-        import java.util.Objects;
-        import java.util.logging.Level;
-        import java.util.logging.Logger;
-        import java.util.regex.Pattern;
+import com.github.segator.proxylive.ProxyLiveUtils;
+import com.github.segator.proxylive.config.ProxyLiveConfiguration;
+import com.github.segator.proxylive.entity.Channel;
+import com.github.segator.proxylive.processor.IStreamProcessor;
+import com.github.segator.proxylive.profiler.FFmpegProfilerService;
+import com.github.segator.proxylive.stream.ClientBroadcastedInputStream;
+import com.github.segator.proxylive.stream.WithoutBlockingInputStream;
 
-        import org.apache.commons.io.FileUtils;
-        import org.springframework.beans.factory.annotation.Autowired;
-        import org.springframework.beans.factory.annotation.Value;
+import java.io.*;
+import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.regex.Pattern;
 
-        import javax.annotation.PostConstruct;
+import org.apache.commons.io.FileUtils;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+
+import javax.annotation.PostConstruct;
 
 /**
  *
  * @author Isaac Aymerich <isaac.aymerich@gmail.com>
  */
 public class HLSDirectTask implements IStreamTask {
-
+    private final org.slf4j.Logger logger = LoggerFactory.getLogger(HLSDirectTask.class);
     @Autowired
     private FFmpegProfilerService ffmpegProfilerService;
     @Autowired
@@ -115,7 +111,7 @@ public class HLSDirectTask implements IStreamTask {
 
     @Override
     public void terminate() {
-        System.out.println("[" + getIdentifier() + "] Required Terminate HLS");
+        logger.debug("[" + getIdentifier() + "] Required Terminate HLS");
         terminated = true;
         try {
             if (inputThread != null) {
@@ -141,7 +137,7 @@ public class HLSDirectTask implements IStreamTask {
         try {
             runDate = new Date();
             dateFormatter = new SimpleDateFormat(ffmpegProfilerService.getSegmentDate("SimpleDateFormat"));
-            System.out.println("[" + getIdentifier() + "] Start HLS");
+            logger.debug("[" + getIdentifier() + "] Start HLS");
             hlsParameters = ffmpegProfilerService.getHLSParameters(getIdentifier());
             transcodeParameters = " -c:a copy -c:v copy -sn ";
 
@@ -164,31 +160,27 @@ public class HLSDirectTask implements IStreamTask {
                 return;
             }
             String ffmpegCommand = ffmpegExecutable +  " -i " + url + " " +  transcodeParameters +" "+ hlsParameters;
-            System.out.println("[HLS Command]"+ffmpegCommand);
+            logger.debug("[" + getIdentifier() + "] HLS ffmpeg command: "+ffmpegCommand);
             process = Runtime.getRuntime().exec(ffmpegCommand);
 
             InputStream is = new WithoutBlockingInputStream(process.getErrorStream());
+            BufferedReader br = new BufferedReader(new InputStreamReader(is));
             byte[] bufferError = new byte[1024];
             while (isRunning() && !isTerminated()) {
                 if (internalCrash && !isTerminated()) {
                     throw new IOException("Handled Crash event");
                 }
-                int readed = is.read(bufferError);
-                if (readed > 0) {
-                    System.out.print(new String(bufferError, 0, readed));
-                } else {
-                    Thread.sleep(5);
+                if(br.ready()) {
+                    logger.debug("[" + getIdentifier() + "] " + br.readLine());
                 }
             }
 
         } catch (Exception ex) {
             if (!isTerminated()) {
-                System.out.println("Error:" + ex.getMessage());
-                Logger.getLogger(HLSDirectTask.class.getName()).log(Level.SEVERE, null, ex);
+                logger.error("[" + getIdentifier() + "]",ex);
                 internalCrash = true;
             }
         } finally {
-            System.out.println("HLS Finally");
             stopProcess();
             try {
                 inputThread.join();
@@ -208,7 +200,7 @@ public class HLSDirectTask implements IStreamTask {
                 FileUtils.deleteDirectory(ffmpegProfilerService.getHLSTemporalPath(getIdentifier()).toFile());
             } catch (Exception ex) {
             }
-            System.out.println("[" + getIdentifier() + "] Terminated HLS");
+            logger.debug("[" + getIdentifier() + "] Terminated HLS");
         }
     }
 

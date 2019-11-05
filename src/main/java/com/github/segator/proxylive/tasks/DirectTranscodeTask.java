@@ -13,16 +13,18 @@ import com.github.segator.proxylive.profiler.FFmpegProfilerService;
 import com.github.segator.proxylive.stream.BroadcastCircularBufferedOutputStream;
 import com.github.segator.proxylive.stream.WebInputStream;
 import com.github.segator.proxylive.stream.WithoutBlockingInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+
+import java.io.*;
 import java.net.URL;
 import java.util.Date;
 import java.util.Objects;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
 import java.util.regex.Pattern;
 import javax.annotation.PostConstruct;
+
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
@@ -32,6 +34,7 @@ import org.springframework.core.env.Environment;
  * @author isaac
  */
 public class DirectTranscodeTask implements IMultiplexerStreamer {
+    Logger logger = LoggerFactory.getLogger(DirectTranscodeTask.class);
 
     @Autowired
     private FFmpegProfilerService ffmpegProfilerService;
@@ -73,7 +76,7 @@ public class DirectTranscodeTask implements IMultiplexerStreamer {
 
     @Override
     public void terminate() {
-        System.out.println("[" + getIdentifier() + "] Required Terminate Transcode");
+        logger.debug("[" + getIdentifier() + "] Required Terminate Transcode");
         terminated = true;
         try {
             if (errorReaderThread != null) {
@@ -91,7 +94,7 @@ public class DirectTranscodeTask implements IMultiplexerStreamer {
     @Override
     public void run() {
         try {
-            System.out.println("[" + getIdentifier() + "] Start Transcode");
+            logger.debug("[" + getIdentifier() + "] Start Transcode");
             runDate = new Date();
             transcodeParameters = ffmpegProfilerService.getTranscodeParameters(profile);
             String ffmpegExecutable = ffmpegProfilerService.getFFMpegExecutable();
@@ -102,7 +105,7 @@ public class DirectTranscodeTask implements IMultiplexerStreamer {
             }
             transcodeParameters = transcodeParameters.replace("{input}",url).replace("{channelParameters}",channel.getFfmpegParameters()!=null?channel.getFfmpegParameters():"");
             String ffmpegCommand = ffmpegExecutable + " " + transcodeParameters + " " + ffmpegMpegTSParameters+" -";
-            System.out.println("Transcoding Command" + ffmpegCommand);
+            logger.debug("[" + getIdentifier() + "] Transcoding Command: " + ffmpegCommand);
             process = Runtime.getRuntime().exec(ffmpegCommand);
 
             errorReaderThread = new Thread("Transcoding Error Reader Thread:" + getIdentifier()) {
@@ -110,21 +113,18 @@ public class DirectTranscodeTask implements IMultiplexerStreamer {
                     byte[] bufferError = new byte[4096];
                     InputStream is = new WithoutBlockingInputStream(process.getErrorStream());
                     try {
+                        BufferedReader br = new BufferedReader(new InputStreamReader(is));
                         while (isRunning() && !isTerminated()) {
                             if (internalCrash && !isTerminated()) {
                                 throw new IOException("Handled Crash event");
                             }
-                            int readed = is.read(bufferError);
-                            if (readed > 0) {
-                                System.out.print(new String(bufferError, 0, readed));
-                            } else {
-                                Thread.sleep(5);
+                            if(br.ready()) {
+                                logger.debug("[" + getIdentifier() + "] " + br.readLine());
                             }
                         }
                     } catch (Exception e) {
                         if (!isTerminated()) {
-                            System.out.println("Error:" + e.getMessage());
-                            Logger.getLogger(DirectTranscodeTask.class.getName()).log(Level.SEVERE, null, e);
+                            logger.error("[" + getIdentifier() + "] Error on transcoding", e);
                             internalCrash = true;
                         }
                     }
@@ -150,8 +150,8 @@ public class DirectTranscodeTask implements IMultiplexerStreamer {
             }
         } catch (Exception ex) {
             if (!isTerminated()) {
-                System.out.println("Error:" + ex.getMessage());
-                Logger.getLogger(DirectTranscodeTask.class.getName()).log(Level.SEVERE, null, ex);
+                logger.error("Error on transcoding " + getIdentifier(),ex);
+
                 internalCrash = true;
             }
         } finally {
@@ -170,7 +170,7 @@ public class DirectTranscodeTask implements IMultiplexerStreamer {
                 run();
             }
         } else {
-            System.out.println("[" + getIdentifier() + "] Terminated Transcode");
+            logger.debug("[" + getIdentifier() + "] Terminated Transcode");
         }
     }
 

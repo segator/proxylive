@@ -1,5 +1,9 @@
 package com.github.segator.proxylive.stream;
 
+import com.github.segator.proxylive.service.EPGService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -8,6 +12,7 @@ import java.net.MulticastSocket;
 import java.util.regex.Pattern;
 
 public class UDPInputStream extends VideoInputStream {
+    private final Logger logger = LoggerFactory.getLogger(UDPInputStream.class);
     private final InetAddress server;
     private final int port;
     private final byte[] buffer;
@@ -58,7 +63,7 @@ public class UDPInputStream extends VideoInputStream {
             currentPacket = inPacket.getData();
             currentPacketSize = inPacket.getLength();
             if(inPacket.getOffset()!=0){
-                System.out.println("asdsad");
+                logger.trace("offset !=0");
             }
             currentPacketPosition=0;
         }

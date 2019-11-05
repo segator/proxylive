@@ -1,7 +1,10 @@
 package com.github.segator.proxylive.service;
 
 import com.github.segator.proxylive.config.ProxyLiveConfiguration;
+import com.github.segator.proxylive.tasks.HLSDirectTask;
 import org.apache.commons.io.IOUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Controller;
@@ -21,7 +24,7 @@ import java.util.zip.GZIPInputStream;
 
 @Service
 public class EPGService {
-
+    private final Logger logger = LoggerFactory.getLogger(EPGService.class);
     private File tempEPGFile;
 
     @Autowired
@@ -35,7 +38,7 @@ public class EPGService {
             return;
         }
         if(new Date().getTime()-lastUpdate>+(config.getSource().getEpg().getRefresh()*1000)) {
-            System.out.println("Refreshing EPG");
+            logger.info("Refreshing EPG");
             HttpURLConnection connection = getURLConnection(config.getSource().getEpg().getUrl());
             if (connection.getResponseCode() != 200) {
                 return;
