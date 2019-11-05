@@ -171,7 +171,11 @@ public class HLSDirectTask implements IStreamTask {
                     throw new IOException("Handled Crash event");
                 }
                 if(br.ready()) {
-                    logger.debug("[" + getIdentifier() + "] " + br.readLine());
+                    try{
+                        logger.debug("[" + getIdentifier() + "] " + br.readLine());
+                    }catch(Exception e){
+                        //if the buffer it's empty after readiness it crash with underlying input stream returned zero bytes
+                    }
                 }
             }
 
