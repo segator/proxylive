@@ -47,7 +47,7 @@ ffmpeg:
             parameters: "-i {input} {channelParameters} -sn  -c:a:0 aac -ac 2 -b:a 320k -c:v libx264 -tune zerolatency -g 10 -vprofile high -level 4.0 -crf 18 -movflags +faststart -bufsize 15000k -maxrate 3000k  -preset fast -vf scale=-1:720,yadif=0"
         -
             alias: "1080p"
-            parameters:  "-i {input} {channelParameters} -sn  -c:a:0 aac -ac 2 -b:a 320k -c:v libx264 -tune zerolatency -g 300 -vprofile high -level 4.0 -movflags +faststart -bufsize 15000k -maxrate 5000k  -preset faster -vf yadif=0 -nostats -hide_banner"
+            parameters:  "-i {input} {channelParameters} -sn  -c:a:0 aac -ac 2 -b:a 320k -c:v libx264 -tune zerolatency -g 300 -vprofile high -level 4.0 -movflags +faststart -bufsize 15000k -maxrate 5000k  -preset faster -vf yadif=0"
         -
             alias: "vaapi1080p"
             parameters: "-hwaccel vaapi -vaapi_device /dev/dri/renderD128 -hwaccel_output_format vaapi -i {input} {channelParameters} -sn  -c:a:0 aac -ac 2 -b:a 320k -c:v h264_vaapi -tune zerolatency -g 300 -level 41 -movflags +faststart -bufsize 15000k -maxrate 5000k  -preset faster -vf format=vaapi,hwupload,deinterlace_vaapi"
