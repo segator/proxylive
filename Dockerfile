@@ -17,6 +17,7 @@ RUN apt-get update -y && \
     apt-get install -y openjdk-8-jdk && \
     apt-get clean all
 
+ENV DEBUG_MODE false
 ENV JAVA_HOME /usr/java/default
 COPY entrypoint.sh /entrypoint.sh
 EXPOSE 8080
