@@ -171,7 +171,7 @@ public class HttpDownloaderTask implements IMultiplexerStreamer {
     @Override
     public int hashCode() {
         int hash = 7;
-        hash = 89 * hash + Objects.hashCode(this.url);
+        hash = 89 * hash + Objects.hashCode(this.channel.getId());
         return hash;
     }
 
@@ -188,7 +188,7 @@ public class HttpDownloaderTask implements IMultiplexerStreamer {
             return false;
         }
         final HttpDownloaderTask other = (HttpDownloaderTask) obj;
-        if (!Objects.equals(this.url, other.url)) {
+        if (!Objects.equals(this.channel.getId(), other.channel.getId())) {
             return false;
         }
         return true;

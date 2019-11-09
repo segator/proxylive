@@ -181,7 +181,7 @@ public class DirectTranscodeTask implements IMultiplexerStreamer {
     @Override
     public int hashCode() {
         int hash = 5;
-        hash = 31 * hash + Objects.hashCode(this.url);
+        hash = 31 * hash + Objects.hashCode(this.channel.getId());
         hash = 31 * hash + Objects.hashCode(this.profile);
         return hash;
     }
@@ -195,7 +195,7 @@ public class DirectTranscodeTask implements IMultiplexerStreamer {
             return false;
         }
         final DirectTranscodeTask other = (DirectTranscodeTask) obj;
-        if (!Objects.equals(this.url, other.url)) {
+        if (!Objects.equals(this.channel.getId(), other.channel.getId())) {
             return false;
         }
         if (!Objects.equals(this.profile, other.profile)) {

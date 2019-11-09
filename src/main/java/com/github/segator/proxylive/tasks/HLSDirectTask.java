@@ -244,7 +244,7 @@ public class HLSDirectTask implements IStreamTask {
     @Override
     public int hashCode() {
         int hash = 5;
-        hash = 31 * hash + Objects.hashCode(this.url);
+        hash = 31 * hash + Objects.hashCode(this.channel.getId());
         hash = 31 * hash + Objects.hashCode(this.profile);
         hash = 31 * hash + "hls".hashCode();
         return hash;
@@ -259,7 +259,7 @@ public class HLSDirectTask implements IStreamTask {
             return false;
         }
         final HLSDirectTask other = (HLSDirectTask) obj;
-        if (!Objects.equals(this.url, other.url)) {
+        if (!Objects.equals(this.channel.getId(), other.channel.getId())) {
             return false;
         }
         if (!Objects.equals(this.profile, other.profile)) {
