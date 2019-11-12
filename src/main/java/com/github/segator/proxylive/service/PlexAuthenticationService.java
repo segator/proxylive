@@ -66,7 +66,7 @@ public class PlexAuthenticationService implements AuthenticationService {
         NodeList users = dom.getElementsByTagName("User");
         for (int i = 0; i < users.getLength(); i++) {
             Element userEl = (Element) users.item(i);
-            if (userEl.getAttribute("id").equals(userID) && userEl.getAttribute("allowChannels").equals("1")) {
+            if (userEl.getAttribute("id").equals(userID)) {
                 NodeList servers = userEl.getElementsByTagName("Server");
                 if (servers.getLength() > 0) {
                     for (int j = 0; j < servers.getLength(); j++) {
