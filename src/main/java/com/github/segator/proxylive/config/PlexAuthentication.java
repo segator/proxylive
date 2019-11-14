@@ -13,6 +13,7 @@ package com.github.segator.proxylive.config;
 public class PlexAuthentication {
 
     private String adminUser, adminPass, serverName;
+    private long refresh=10800;
 
     public String getAdminUser() {
         return adminUser;
@@ -38,4 +39,11 @@ public class PlexAuthentication {
         this.serverName = serverName;
     }
 
+    public long getRefresh() {
+        return refresh;
+    }
+
+    public void setRefresh(long refresh) {
+        this.refresh = refresh;
+    }
 }

@@ -26,6 +26,7 @@ package com.github.segator.proxylive.controller;
 import com.github.segator.proxylive.ProxyLiveConstants;
 import com.github.segator.proxylive.ProxyLiveUtils;
 import com.github.segator.proxylive.config.FFMpegProfile;
+import com.github.segator.proxylive.entity.AuthToken;
 import com.github.segator.proxylive.entity.Channel;
 import com.github.segator.proxylive.entity.ClientInfo;
 import com.github.segator.proxylive.processor.DirectHLSTranscoderStreamProcessor;
@@ -34,7 +35,6 @@ import com.github.segator.proxylive.profiler.FFmpegProfilerService;
 import com.github.segator.proxylive.service.ChannelService;
 import com.github.segator.proxylive.service.EPGService;
 import com.github.segator.proxylive.service.TokensService;
-import com.github.segator.proxylive.tasks.HttpDownloaderTask;
 import com.github.segator.proxylive.tasks.StreamProcessorsSession;
 
 import java.io.*;
@@ -101,31 +101,53 @@ public class StreamController {
 
 
 
-    private boolean userValidation(HttpServletRequest request,HttpServletResponse response) throws Exception {
+    private boolean authenticate(HttpServletRequest request, HttpServletResponse response) throws Exception {
         MultiValueMap<String, String> parameters = UriComponentsBuilder.fromUriString(ProxyLiveUtils.getURL(request)).build().getQueryParams();
+
         String token = parameters.getFirst("token");
+        String username = parameters.getFirst("user");
+        if(token!=null){
+            return validateToken(token);
+        }else if(username!=null){
+            return validateUser(username,parameters.getFirst("pass"));
+        }else{
+            return false;
+        }
+    }
 
-        if(token==null || tokenService.getTokenByID(token)==null) {
-            Boolean userLoggedResult = streamProcessorsSession.isUserLogged(parameters.getFirst("user"));
-
-            if(userLoggedResult==null || !userLoggedResult) {
-                if (!authService.loginUser(parameters.getFirst("user"), parameters.getFirst("pass"))) {
-                    streamProcessorsSession.addCacheClient(parameters.getFirst("user"),false);
-                    response.setStatus(HttpStatus.UNAUTHORIZED.value());
-                    return false;
-                } else {
-                    streamProcessorsSession.addCacheClient(parameters.getFirst("user"),true);
-                }
+    private boolean validateUser(String username, String pass) throws Exception {
+        Boolean userLoggedResult = streamProcessorsSession.isUserLogged(username);
+        if(userLoggedResult==null) {
+            if (!authService.loginUser(username, pass)) {
+                streamProcessorsSession.addCacheClient(username,false);
+                userLoggedResult=false;
+            } else {
+                streamProcessorsSession.addCacheClient(username,true);
+                userLoggedResult=true;
             }
         }
-        return true;
+        return userLoggedResult;
+    }
+
+    private boolean validateToken(String token) {
+        AuthToken authToken = tokenService.getTokenByID(token);
+        if(authToken==null){
+            return false;
+        }
+
+        if(authToken.getExpirationDate()!=null){
+            return authToken.getExpirationDate().getTime()>new Date().getTime();
+        }else{
+            return true;
+        }
     }
 
     @RequestMapping(value = "/view/{profile}/{channelID}",method=RequestMethod.GET)
     public void dispatchStream(@PathVariable("profile") String profile, @PathVariable("channelID") String channelID,
             HttpServletRequest request, HttpServletResponse response) throws Exception {
 
-        if(!userValidation(request,response)){
+        if(!authenticate(request,response)){
+            response.setStatus(HttpStatus.UNAUTHORIZED.value());
             return;
         }
         if(channelID.contains("?")){
@@ -239,7 +261,8 @@ public class StreamController {
     public @ResponseBody
     String generatePlaylist(HttpServletRequest request, HttpServletResponse response, @PathVariable("profile") String profile, @PathVariable("format") String format) throws MalformedURLException, ProtocolException, IOException, ParseException, Exception {
         MultiValueMap<String, String> parameters = UriComponentsBuilder.fromUriString(ProxyLiveUtils.getURL(request)).build().getQueryParams();
-        if(!userValidation(request,response)){
+        if(!authenticate(request,response)){
+            response.setStatus(HttpStatus.UNAUTHORIZED.value());
             return "invalid user";
         }
 
@@ -321,7 +344,8 @@ public class StreamController {
     public void dispatchHLS(@PathVariable("profile") String profile, @PathVariable("channelID") String channelID,
             @PathVariable String file, HttpServletRequest request, HttpServletResponse response) throws Exception {
         long now = new Date().getTime();
-        if(!userValidation(request,response)){
+        if(!authenticate(request,response)){
+            response.setStatus(HttpStatus.UNAUTHORIZED.value());
             return;
         }
         if(!config.getFfmpeg().getHls().getEnabled()){

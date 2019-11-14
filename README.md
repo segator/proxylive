@@ -173,6 +173,8 @@ all your plex friends that have the option "allow channels" will have access to 
 authentication:
     #For plex auth
     plex:
+        #every refresh time in seconds we will fetch users that are allowed to login
+        refresh:  10800
         adminUser: "plexOwnerUser"
         adminPass: "plexOwnerPass"
         serverName: "MyPlexServerName"

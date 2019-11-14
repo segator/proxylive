@@ -23,6 +23,9 @@
  */
 package com.github.segator.proxylive.config;
 
+import com.github.segator.proxylive.tasks.DirectTranscodeTask;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 
@@ -37,7 +40,7 @@ import javax.annotation.PostConstruct;
 @Configuration
 @ConfigurationProperties
 public class ProxyLiveConfiguration {
-
+    Logger logger = LoggerFactory.getLogger(DirectTranscodeTask.class);
     private BufferingConfiguration buffers;
     private FFMpegConfiguration ffmpeg;
     private HttpLiveSource source;
@@ -57,6 +60,7 @@ public class ProxyLiveConfiguration {
             builder.append(VALIDCHARS.charAt(character));
         }
         internalToken= builder.toString();
+        logger.info("Your internal token is:"+internalToken);
 
         //If tvheadend input is set complete configuration
         if(source.getTvheadendURL()!=null){

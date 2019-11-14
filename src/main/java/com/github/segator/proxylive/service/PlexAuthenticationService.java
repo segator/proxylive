@@ -10,6 +10,7 @@ import com.github.segator.proxylive.config.ProxyLiveConfiguration;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.ProtocolException;
@@ -18,6 +19,7 @@ import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Date;
 import java.util.List;
 import javax.annotation.PostConstruct;
 import javax.xml.parsers.DocumentBuilder;
@@ -31,6 +33,7 @@ import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -43,43 +46,49 @@ import org.xml.sax.SAXException;
  */
 public class PlexAuthenticationService implements AuthenticationService {
     Logger logger = LoggerFactory.getLogger(PlexAuthenticationService.class);
+    private long lastUpdate=0;
+    private List<String> allowedUsers;
     @Autowired
     private ProxyLiveConfiguration configuration;
 
     @Override
     public boolean loginUser(String user, String password) throws MalformedURLException, IOException, ParseException {
+        if(allowedUsers.contains(user)){
+            //Check user pass is valid
+            return getUserData(user, password)!=null;
+        }
+        return false;
+    }
+
+    @Scheduled(fixedDelay = 30 * 1000)//Every 30 seconds
+    public void refreshPlexUsers() throws IOException {
         PlexAuthentication plexAuthConfig = configuration.getAuthentication().getPlex();
-        //Check user pass is valid
-        JSONObject userData = getUserData(user, password);
-        if(userData==null){
-            return false;
-        }
-        String userID = (String) userData.get("id").toString();
-        //Check the user is registered to our plex server and have channels enabled
-        URL url = new URL(String.format("https://%s:%s@plex.tv/api/users", URLEncoder.encode(plexAuthConfig.getAdminUser(),"UTF-8"), URLEncoder.encode(plexAuthConfig.getAdminPass(),"UTF-8")));
-        HttpURLConnection connection = createConnection(url);
-        connection.connect();
-        if (connection.getResponseCode() != 200) {
-            throw new IOException("unexpected error when getting users list:" + connection.getResponseCode());
-        }
-        Document dom = newDocumentFromInputStream(connection.getInputStream());
-        NodeList users = dom.getElementsByTagName("User");
-        for (int i = 0; i < users.getLength(); i++) {
-            Element userEl = (Element) users.item(i);
-            if (userEl.getAttribute("id").equals(userID)) {
+        if(new Date().getTime()-lastUpdate>+(plexAuthConfig.getRefresh()*1000)) {
+            List<String> allowedUsers = new ArrayList();
+
+            URL url = new URL(String.format("https://%s:%s@plex.tv/api/users", URLEncoder.encode(plexAuthConfig.getAdminUser(), "UTF-8"), URLEncoder.encode(plexAuthConfig.getAdminPass(), "UTF-8")));
+            HttpURLConnection connection = createConnection(url);
+            connection.connect();
+            if (connection.getResponseCode() != 200) {
+                throw new IOException("unexpected error when getting users list:" + connection.getResponseCode());
+            }
+            Document dom = newDocumentFromInputStream(connection.getInputStream());
+            NodeList users = dom.getElementsByTagName("User");
+            for (int i = 0; i < users.getLength(); i++) {
+                Element userEl = (Element) users.item(i);
                 NodeList servers = userEl.getElementsByTagName("Server");
                 if (servers.getLength() > 0) {
                     for (int j = 0; j < servers.getLength(); j++) {
                         Element server = (Element) servers.item(j);
                         if (server.getAttribute("name").equals(plexAuthConfig.getServerName())) {
-                            return true;
+                            allowedUsers.add(userEl.getAttribute("username"));
                         }
                     }
                 }
             }
+            this.lastUpdate=new Date().getTime();
+            this.allowedUsers = allowedUsers;
         }
-
-        return false;
     }
 
     @Override
@@ -106,8 +115,7 @@ public class PlexAuthenticationService implements AuthenticationService {
     @PostConstruct
     private void initialize() throws MalformedURLException, ProtocolException, IOException, ParseException {
         PlexAuthentication plexAuthConfig = configuration.getAuthentication().getPlex();
-        JSONObject userData = getUserData(plexAuthConfig.getAdminUser(), plexAuthConfig.getAdminPass());
-
+        refreshPlexUsers();
     }
 
     private HttpURLConnection createConnection(URL url) throws ProtocolException, IOException {
