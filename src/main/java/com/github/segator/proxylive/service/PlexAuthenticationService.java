@@ -53,7 +53,7 @@ public class PlexAuthenticationService implements AuthenticationService {
 
     @Override
     public boolean loginUser(String user, String password) throws MalformedURLException, IOException, ParseException {
-        if(allowedUsers.contains(user)){
+        if(user!=null && allowedUsers.contains(user.toLowerCase())){
             //Check user pass is valid
             return getUserData(user, password)!=null;
         }
@@ -81,7 +81,7 @@ public class PlexAuthenticationService implements AuthenticationService {
                     for (int j = 0; j < servers.getLength(); j++) {
                         Element server = (Element) servers.item(j);
                         if (server.getAttribute("name").equals(plexAuthConfig.getServerName())) {
-                            allowedUsers.add(userEl.getAttribute("username"));
+                            allowedUsers.add(userEl.getAttribute("username").toLowerCase());
                         }
                     }
                 }
