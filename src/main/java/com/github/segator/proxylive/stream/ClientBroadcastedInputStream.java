@@ -95,20 +95,6 @@ public class ClientBroadcastedInputStream extends InputStream {
         } else if(clientByteBuffer.position() == sourceByteBuffer.position()){
             return 0;
         } else if (clientByteBuffer.position() <= sourcePosition) {
-           /** try {
-                long waitTime = 0;
-                while (clientByteBuffer.position() == sourceByteBuffer.position()) {
-
-                    Thread.sleep(10);
-                    waitTime+=10;
-                    if(waitTime>15000){
-                        throw new InterruptedByTimeoutException();
-                    }
-                }
-            } catch (InterruptedException ex) {
-                throw new IOException("Interrupted waiting");
-            }
-            sourcePosition = sourceByteBuffer.position();**/
             //Write buffer rewinded
             if (sourcePosition < clientByteBuffer.position()) {
                 readed = read(b);

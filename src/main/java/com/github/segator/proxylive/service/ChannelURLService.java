@@ -30,6 +30,7 @@ import java.io.*;
 
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -156,6 +157,7 @@ public class ChannelURLService implements ChannelService {
                                     }
                                 }
                                 if(!found){
+                                    //System.out.println("Channel " + tvhUUID + " not found.. canceling update");
                                     throw new Exception("Channel " + tvhUUID + " not found.. canceling update");
                                 }
                                 break;
@@ -190,7 +192,7 @@ public class ChannelURLService implements ChannelService {
         return returnObject;
     }
 
-    private void readPicons(List<Channel> channels) throws IOException {
+    private void readPicons(List<Channel> channels) throws IOException, URISyntaxException {
         Path piconsPath = Files.createTempDirectory("proxylivePicons");
         for (Channel channel: channels) {
             if(channel.getLogoURL()!=null){
@@ -209,6 +211,9 @@ public class ChannelURLService implements ChannelService {
                     //if sources got from git then load picon from git
                     if(git!=null){
                         channel.setLogoFile(new File(git.getRepository().getDirectory().getParentFile(),channel.getLogoFile().toString()));
+                    }else if(config.getSource().getChannels().getUrl()!=null){
+                        String basePath = new File(new URL(config.getSource().getChannels().getUrl()).toURI()).getParent();
+                        channel.setLogoFile(Paths.get(basePath,channel.getLogoFile().toString()).toFile());
                     }
                 }
 

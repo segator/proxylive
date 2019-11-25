@@ -108,10 +108,8 @@ public class StreamController {
         String username = parameters.getFirst("user");
         if(token!=null){
             return validateToken(token);
-        }else if(username!=null){
-            return validateUser(username,parameters.getFirst("pass"));
         }else{
-            return false;
+            return validateUser(username,parameters.getFirst("pass"));
         }
     }
 

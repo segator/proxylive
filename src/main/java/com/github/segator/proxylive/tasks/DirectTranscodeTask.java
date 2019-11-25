@@ -124,6 +124,8 @@ public class DirectTranscodeTask implements IMultiplexerStreamer {
                                 }catch(Exception e){
                                     //if the buffer it's empty after readiness it crash with underlying input stream returned zero bytes
                                 }
+                            }else{
+                                Thread.sleep(200);
                             }
                         }
                     } catch (Exception e) {
