@@ -1,5 +1,6 @@
 package com.github.segator.proxylive.stream;
 
+import com.github.segator.proxylive.config.ProxyLiveConfiguration;
 import com.github.segator.proxylive.service.EPGService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,10 +20,12 @@ public class UDPInputStream extends VideoInputStream {
     private byte[] currentPacket;
     private int currentPacketSize;
     private int currentPacketPosition=0;
+    private ProxyLiveConfiguration config;
     private DatagramSocket clientSocket;
 
 
-    public UDPInputStream(String url) throws  IOException {
+    public UDPInputStream(String url, ProxyLiveConfiguration config) throws  IOException {
+        this.config = config;
         url = url.split(Pattern.quote("udp://"))[1];
         server = InetAddress.getByName(url.split(Pattern.quote(":"))[0]);
         port = new Integer(url.split(Pattern.quote(":"))[1]);
@@ -33,7 +36,7 @@ public class UDPInputStream extends VideoInputStream {
         //clientSocket = new DatagramSocket();
         clientSocket = new MulticastSocket(port);
         ((MulticastSocket) clientSocket).joinGroup(server);
-        clientSocket.setSoTimeout(5000);
+        clientSocket.setSoTimeout(config.getSource().getReconnectTimeout()*1000);
         //clientSocket.connect(server,port);
     }
 

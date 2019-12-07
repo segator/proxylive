@@ -2,6 +2,7 @@ package com.github.segator.proxylive.service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.segator.proxylive.ProxyLiveUtils;
 import com.github.segator.proxylive.config.GitSource;
 import com.github.segator.proxylive.config.ProxyLiveConfiguration;
 import com.github.segator.proxylive.entity.Channel;
@@ -135,7 +136,7 @@ public class ChannelURLService implements ChannelService {
                 for(ChannelSource channelSource: channel.getSources()){
                     String sourceURL= channelSource.getUrl();
                     if(sourceURL.startsWith("tvh://") || sourceURL.startsWith("tvhs://")){
-                        sourceURL = sourceURL.replace("tvh://","http://");
+                        sourceURL = ProxyLiveUtils.replaceSchemes(sourceURL);
                         URL tvhURL = new URL(sourceURL);
                         tvhURL = new URL(tvhURL.getProtocol()+"://"+ tvhURL.getUserInfo() + "@"+tvhURL.getHost()+":"+tvhURL.getPort()+"/");
 

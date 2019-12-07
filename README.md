@@ -80,7 +80,19 @@ channels.json
           {
             "url" : "rtp://200.100.1500:1001",
             "priority" : 3
-          } 
+          },
+          {
+            "url" : "hlss://my.server/my/stream.m3u8", <- hls or hlss(TLS)
+            "priority" : 4
+          },
+          {
+            "url" : "dashs://my.server/my/stream.m3u8",  <- dash or dashs(TLS)
+            "priority" : 5
+          },
+          {
+            "url" : "rtmp://my.server/rtmp/live",
+            "priority" : 6
+          }  
       ]
       
     }
@@ -89,6 +101,8 @@ channels.json
 Picons can be readed from URL or File (logoFile or logoURL), logoURL will be cached on proxylive,
 so clients will request picons to proxylive instead of directly to the defined URL.
 In case of use git backend, picons will be expected to be in the root of the git repository.
+
+
 
 
 
@@ -267,7 +281,10 @@ java -jar proxylive.jar
 - [X] Prometheus Support
 - [ ] Fluend support
 - [X] UDP Input
-- [ ] RTMP Input
+- [X] RTMP Input
+- [X] RTSP Input
+- [X] HLS Input
+- [X] DASH Input
 - [ ] RTMP Output
 - [ ] UDP Output
 - [ ] Dash Output

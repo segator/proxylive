@@ -26,12 +26,16 @@ package com.github.segator.proxylive;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.time.DurationFormatUtils;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 /**
  *
  * @author Isaac Aymerich <isaac.aymerich@gmail.com>
  */
 public class ProxyLiveUtils {
 
+    private static Pattern pattern = Pattern.compile("^(tvh|hls|dash)(s)?:\\/\\/(.+)$");
     public static String getOS() {
 
         String OS = System.getProperty("os.name").toLowerCase();
@@ -107,5 +111,14 @@ public class ProxyLiveUtils {
             url.append("?").append(queryString);
         }
         return url.toString();
+    }
+
+    public  static String replaceSchemes(String url){
+        Matcher matcher = pattern.matcher(url);
+        if(matcher.matches()){
+            return "http" + matcher.group(2) + "://" +matcher.group(3);
+        }else{
+            return url;
+        }
     }
 }

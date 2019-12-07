@@ -23,13 +23,12 @@
  */
 package com.github.segator.proxylive.tasks;
 
+import com.github.segator.proxylive.ProxyLiveUtils;
 import com.github.segator.proxylive.entity.Channel;
 import com.github.segator.proxylive.entity.ChannelSource;
 import com.github.segator.proxylive.processor.IStreamProcessor;
-import com.github.segator.proxylive.stream.BroadcastCircularBufferedOutputStream;
-import com.github.segator.proxylive.stream.UDPInputStream;
-import com.github.segator.proxylive.stream.VideoInputStream;
-import com.github.segator.proxylive.stream.WebInputStream;
+import com.github.segator.proxylive.stream.*;
+
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -40,6 +39,7 @@ import com.github.segator.proxylive.config.ProxyLiveConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
 
 /**
  *
@@ -57,18 +57,23 @@ public class HttpDownloaderTask implements IMultiplexerStreamer {
     private int crashTimes = 0;
     private byte[] buffer;
     private int sourcePriority;
+    ChannelSource channelSource;
+    @Autowired
+    private ApplicationContext context;
     @Autowired
     private ProxyLiveConfiguration config;
 
     public HttpDownloaderTask(Channel channel) throws MalformedURLException, IOException {
         this.channel = channel;
 
+
     }
 
     @PostConstruct
     public void initializeBean() throws Exception {
         sourcePriority=1;
-        url = channel.getSourceByPriority(sourcePriority).getUrl();
+        channelSource =  channel.getSourceByPriority(sourcePriority);
+        url = channelSource.getUrl();
         buffer = new byte[config.getBuffers().getChunkSize()];
         multiplexerOutputStream = new BroadcastCircularBufferedOutputStream(config.getBuffers().getBroadcastBufferSize());
     }
@@ -109,12 +114,21 @@ public class HttpDownloaderTask implements IMultiplexerStreamer {
         runDate = new Date();
         int len;
         try {
-            if(url.startsWith("http://")){
-                videoInputStream = new WebInputStream(new URL(url));
-            }else if(url.startsWith("udp://")){
-                videoInputStream = new UDPInputStream(url);
+            if(url.startsWith("http")){
+                videoInputStream = new WebInputStream(new URL(url),config);
+            }else if(url.startsWith("udp")){
+                videoInputStream = new UDPInputStream(url,config);
+            }else if(url.startsWith("hls")){
+                videoInputStream = new FFmpegInputStream(ProxyLiveUtils.replaceSchemes(url),config);
+            }else if(url.startsWith("rtmp")){
+                videoInputStream = new FFmpegInputStream(url,config);
+            }else if(url.startsWith("rtsp")){
+                videoInputStream = new FFmpegInputStream(url,config);
+            }else if(url.startsWith("dash")){
+                videoInputStream = new FFmpegInputStream(ProxyLiveUtils.replaceSchemes(url),config);
+            }else{
+                throw new Exception("unkown format url" + url);
             }
-
             logger.debug(getStringIdentifier("Get Stream"));
             if (videoInputStream.connect()) {
                 long lastReaded  = new Date().getTime();
@@ -142,7 +156,7 @@ public class HttpDownloaderTask implements IMultiplexerStreamer {
                 closeWebStream();
                 //If exist more sources try another
                 sourcePriority++;
-                ChannelSource channelSource = channel.getSourceByPriority(sourcePriority);
+                channelSource = channel.getSourceByPriority(sourcePriority);
                 if(channelSource==null){
                     crashTimes++;
                     sourcePriority=1;

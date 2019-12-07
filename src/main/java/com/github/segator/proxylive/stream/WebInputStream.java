@@ -23,6 +23,7 @@
  */
 package com.github.segator.proxylive.stream;
 
+import com.github.segator.proxylive.config.ProxyLiveConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,15 +45,17 @@ public class WebInputStream extends VideoInputStream{
     private final URL url;
     private HttpURLConnection connection;
     private InputStream httpInputStream;
+    private ProxyLiveConfiguration config;
 
-    public WebInputStream(URL url) throws MalformedURLException, IOException {
+    public WebInputStream(URL url, ProxyLiveConfiguration config) throws MalformedURLException, IOException {
         this.url = url;
+        this.config = config;
 
     }
 
     private void initializeConnection() throws IOException {
         connection = (HttpURLConnection) url.openConnection();
-        connection.setReadTimeout(10000);
+        connection.setReadTimeout(config.getSource().getReconnectTimeout()*1000);
         if (url.getUserInfo() != null) {
             String basicAuth = "Basic " + new String(Base64.getEncoder().encode(url.getUserInfo().getBytes()));
             connection.setRequestProperty("Authorization", basicAuth);
@@ -61,7 +64,6 @@ public class WebInputStream extends VideoInputStream{
 
     }
 
-    @Autowired
     public boolean connect() throws IOException {
         initializeConnection();
         connection.connect();
@@ -70,7 +72,6 @@ public class WebInputStream extends VideoInputStream{
         return connected;
     }
 
-    @Autowired
     public boolean isConnected() {
         return httpInputStream != null;
     }
