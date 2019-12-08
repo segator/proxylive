@@ -116,7 +116,7 @@ public class ProxyLiveUtils {
     public  static String replaceSchemes(String url){
         Matcher matcher = pattern.matcher(url);
         if(matcher.matches()){
-            return "http" + matcher.group(2) + "://" +matcher.group(3);
+            return "http" + (matcher.group(2)!=null?matcher.group(2):"") + "://" +matcher.group(3);
         }else{
             return url;
         }
