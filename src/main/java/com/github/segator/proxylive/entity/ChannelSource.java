@@ -3,13 +3,14 @@ package com.github.segator.proxylive.entity;
 public class ChannelSource {
     private String url;
     private Integer priority;
-
+    private String type="raw";
     public ChannelSource(){
 
     }
-    public ChannelSource(int priorty, String url) {
+    public ChannelSource(int priorty, String url,String type) {
         this.priority=priorty;
         this.url=url;
+        this.type=type;
     }
 
     public String getUrl() {
@@ -26,5 +27,13 @@ public class ChannelSource {
 
     public void setPriority(Integer priority) {
         this.priority = priority;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
     }
 }

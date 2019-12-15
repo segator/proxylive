@@ -2,6 +2,7 @@ package com.github.segator.proxylive.stream;
 
 import com.github.segator.proxylive.config.FFMpegConfiguration;
 import com.github.segator.proxylive.config.ProxyLiveConfiguration;
+import com.github.segator.proxylive.entity.Channel;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -14,9 +15,11 @@ public class FFmpegInputStream extends VideoInputStream {
     private Thread threadErrorStream;
     private ProxyLiveConfiguration config;
     private InputStream ffmpegInputStream;
+    private Channel channel;
     private boolean alive;
-    public FFmpegInputStream(String url, ProxyLiveConfiguration config){
+    public FFmpegInputStream(String url, Channel channel, ProxyLiveConfiguration config){
         this.url= url;
+        this.channel= channel;
         this.config=config;
     }
 
@@ -29,7 +32,7 @@ public class FFmpegInputStream extends VideoInputStream {
     @Override
     public boolean connect() throws IOException {
         alive=true;
-        String ffmpegCommand =  config.getFfmpeg().getPath() + " -timeout " + config.getSource().getReconnectTimeout() + " -i " +url + " -codec copy " + config.getFfmpeg().getMpegTS().getParameters() + " -";
+        String ffmpegCommand =  config.getFfmpeg().getPath() + " -timeout " + config.getSource().getReconnectTimeout() + " -i " +url + " " + (channel.getFfmpegParameters()!=null?channel.getFfmpegParameters():"") + " -codec copy " + config.getFfmpeg().getMpegTS().getParameters() + " -";
         process = Runtime.getRuntime().exec(ffmpegCommand);
         ffmpegInputStream = process.getInputStream();
         threadErrorStream = streamToNull(process.getErrorStream(),process);

@@ -118,7 +118,7 @@ public class ChannelTVHeadendService implements ChannelService {
 
             //Channel URL
             channel.setSources(new ArrayList());
-            channel.getSources().add(new ChannelSource(1,config.getSource().getTvheadendURL()+"/stream/channel/"+channel.getId()));
+            channel.getSources().add(new ChannelSource(1,"raw",config.getSource().getTvheadendURL()+"/stream/channel/"+channel.getId()));
         }
         if (tempLogoFilePath != null && tempLogoFilePath.exists()) {
             FileUtils.deleteDirectory(tempLogoFilePath);

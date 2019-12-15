@@ -114,18 +114,12 @@ public class HttpDownloaderTask implements IMultiplexerStreamer {
         runDate = new Date();
         int len;
         try {
-            if(url.startsWith("http")){
+            if(requiresFFmpegStream(channelSource)){
+                videoInputStream = new FFmpegInputStream(ProxyLiveUtils.replaceSchemes(url),channel,config);
+            }else if(url.startsWith("http")){
                 videoInputStream = new WebInputStream(new URL(url),config);
             }else if(url.startsWith("udp")){
                 videoInputStream = new UDPInputStream(url,config);
-            }else if(url.startsWith("hls")){
-                videoInputStream = new FFmpegInputStream(ProxyLiveUtils.replaceSchemes(url),config);
-            }else if(url.startsWith("rtmp")){
-                videoInputStream = new FFmpegInputStream(url,config);
-            }else if(url.startsWith("rtsp")){
-                videoInputStream = new FFmpegInputStream(url,config);
-            }else if(url.startsWith("dash")){
-                videoInputStream = new FFmpegInputStream(ProxyLiveUtils.replaceSchemes(url),config);
             }else{
                 throw new Exception("unkown format url" + url);
             }
@@ -173,6 +167,10 @@ public class HttpDownloaderTask implements IMultiplexerStreamer {
             }
 
         }
+    }
+
+    private boolean requiresFFmpegStream(ChannelSource channelSource) {
+        return channelSource.getType().equals("ffmpeg") || url.startsWith("hls") || url.startsWith("dash") || url.startsWith("rtmp") || url.startsWith("rtsp");
     }
 
     private void closeWebStream() {

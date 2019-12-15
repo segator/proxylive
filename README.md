@@ -71,7 +71,8 @@ channels.json
       "sources" : [ 
           {
             "url" : "http://your/server/stream",
-            "priority" : 1
+            "priority" : 1,
+            "type" : "ffmpeg" <- This is used to force ffmpeg usage when raw profile (usefull for MTPS)
           },
           {
             "url" : "udp://225.225.201.1:8008",
