@@ -93,7 +93,11 @@ channels.json
           {
             "url" : "rtmp://my.server/rtmp/live",
             "priority" : 6
-          }  
+          },
+          {
+            "url" : "pipe://raspivid -o - -t 0 -fps 25 -g 50 -rot 180 -n -a 12 -b 6000000", <- process the inputstream of a process
+            "priority" : 7
+          }    
       ]
       
     }
@@ -126,8 +130,8 @@ source:
         refresh: 600 #10 minutes
     channels:
         #Check (types of channels sources) for more information of this section
-
-
+#UserAgent String used to connect backend http(s) type
+userAgent: "Proxylive"
 streamTimeout: 60
 #Client Stream timeout, if no bytes from backend on this timeout range, the client connection will be closed
 #Pros:

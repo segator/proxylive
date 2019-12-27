@@ -1,15 +1,18 @@
 package com.github.segator.proxylive.stream;
 
-import com.github.segator.proxylive.config.FFMpegConfiguration;
 import com.github.segator.proxylive.config.ProxyLiveConfiguration;
 import com.github.segator.proxylive.entity.Channel;
+import com.github.segator.proxylive.tasks.DirectTranscodeTask;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 
-
-public class FFmpegInputStream extends VideoInputStream {
-
+public class ProcessInputStream extends VideoInputStream {
+    Logger logger = LoggerFactory.getLogger(ProcessInputStream.class);
     private String url;
     private Process process;
     private Thread threadErrorStream;
@@ -17,8 +20,8 @@ public class FFmpegInputStream extends VideoInputStream {
     private InputStream ffmpegInputStream;
     private Channel channel;
     private boolean alive;
-    public FFmpegInputStream(String url, Channel channel, ProxyLiveConfiguration config){
-        this.url= url;
+    public ProcessInputStream(String url, Channel channel, ProxyLiveConfiguration config){
+        this.url= url.replaceAll("{user-agent}",config.getUserAgent()).replaceAll("{timeout}",config.getSource().getReconnectTimeout()+"").replaceAll("{ffmpegParameters}",(channel.getFfmpegParameters()!=null?channel.getFfmpegParameters():""));
         this.channel= channel;
         this.config=config;
     }
@@ -31,11 +34,11 @@ public class FFmpegInputStream extends VideoInputStream {
 
     @Override
     public boolean connect() throws IOException {
+
         alive=true;
-        String ffmpegCommand =  config.getFfmpeg().getPath() + " -timeout " + config.getSource().getReconnectTimeout() + " -i " +url + " -user-agent \""+config.getUserAgent()+"\" " + (channel.getFfmpegParameters()!=null?channel.getFfmpegParameters():"") + " -codec copy " + config.getFfmpeg().getMpegTS().getParameters() + " -";
-        process = Runtime.getRuntime().exec(ffmpegCommand);
+        process = Runtime.getRuntime().exec(url);
         ffmpegInputStream = process.getInputStream();
-        threadErrorStream = streamToNull(process.getErrorStream(),process);
+        threadErrorStream = errorStreamThread(new WithoutBlockingInputStream(process.getErrorStream()),process);
         return true;
     }
 
@@ -66,15 +69,22 @@ public class FFmpegInputStream extends VideoInputStream {
         }
     }
 
-    private Thread  streamToNull(InputStream is,Process proc) {
+    private Thread  errorStreamThread(InputStream is,Process proc) {
         Thread t =  new Thread(new Runnable() {
             @Override
             public void run() {
-                byte[] buffer = new byte[1024];
+                BufferedReader br = new BufferedReader(new InputStreamReader(is));
                 try {
                     while(proc.isAlive()){
-                        is.read(buffer);
-                        Thread.sleep(10);
+                        if(br.ready()) {
+                            try {
+                                logger.debug("[" + url + "] " + br.readLine());
+                            }catch(Exception e){
+                                //if the buffer it's empty after readiness it crash with underlying input stream returned zero bytes
+                            }
+                        }else{
+                            Thread.sleep(200);
+                        }
                     }
                 } catch (Exception e) {
                     e.printStackTrace();

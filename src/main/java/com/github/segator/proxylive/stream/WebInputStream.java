@@ -55,6 +55,7 @@ public class WebInputStream extends VideoInputStream{
 
     private void initializeConnection() throws IOException {
         connection = (HttpURLConnection) url.openConnection();
+        connection.setRequestProperty("User-Agent",config.getUserAgent());
         connection.setReadTimeout(config.getSource().getReconnectTimeout()*1000);
         if (url.getUserInfo() != null) {
             String basicAuth = "Basic " + new String(Base64.getEncoder().encode(url.getUserInfo().getBytes()));

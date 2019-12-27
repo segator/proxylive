@@ -114,8 +114,10 @@ public class HttpDownloaderTask implements IMultiplexerStreamer {
         runDate = new Date();
         int len;
         try {
-            if(requiresFFmpegStream(channelSource)){
-                videoInputStream = new FFmpegInputStream(ProxyLiveUtils.replaceSchemes(url),channel,config);
+            if(requiresFFmpegStream(channelSource)) {
+                videoInputStream = new FFmpegInputStream(ProxyLiveUtils.replaceSchemes(url), channel, config);
+            }else if(url.startsWith("pipe")){
+                videoInputStream = new ProcessInputStream(url.replaceAll("pipe://",""),channel,config);
             }else if(url.startsWith("http")){
                 videoInputStream = new WebInputStream(new URL(url),config);
             }else if(url.startsWith("udp")){

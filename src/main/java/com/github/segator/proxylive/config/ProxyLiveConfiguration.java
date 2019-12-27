@@ -46,6 +46,7 @@ public class ProxyLiveConfiguration {
     private HttpLiveSource source;
     private GEOIPDatasource geoIP;
     private AuthenticationConfiguration authentication;
+    private String userAgent;
     private int streamTimeout;
     private boolean internalConnection;
     private String internalToken;
@@ -128,5 +129,13 @@ public class ProxyLiveConfiguration {
 
     public String getInternalToken() {
         return internalToken;
+    }
+
+    public String getUserAgent() {
+        return userAgent;
+    }
+
+    public void setUserAgent(String userAgent) {
+        this.userAgent = userAgent;
     }
 }
