@@ -10,6 +10,8 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.StringTokenizer;
 
 public class ProcessInputStream extends VideoInputStream {
     Logger logger = LoggerFactory.getLogger(ProcessInputStream.class);
@@ -21,7 +23,7 @@ public class ProcessInputStream extends VideoInputStream {
     private Channel channel;
     private boolean alive;
     public ProcessInputStream(String url, Channel channel, ProxyLiveConfiguration config){
-        this.url= url.replaceAll("{user-agent}",config.getUserAgent()).replaceAll("{timeout}",config.getSource().getReconnectTimeout()+"").replaceAll("{ffmpegParameters}",(channel.getFfmpegParameters()!=null?channel.getFfmpegParameters():""));
+        this.url= url.replaceAll("\\{user-agent\\}",config.getUserAgent()).replaceAll("\\{timeout\\}",config.getSource().getReconnectTimeout()+"").replaceAll("\\{ffmpegParameters\\}",(channel.getFfmpegParameters()!=null?channel.getFfmpegParameters():""));
         this.channel= channel;
         this.config=config;
     }
@@ -34,11 +36,12 @@ public class ProcessInputStream extends VideoInputStream {
 
     @Override
     public boolean connect() throws IOException {
-
         alive=true;
-        process = Runtime.getRuntime().exec(url);
-        ffmpegInputStream = process.getInputStream();
+        //process = Runtime.getRuntime().exec(url);
+        process = new ProcessBuilder().command(translateCommandline(url)).start();
+        ffmpegInputStream = new WithoutBlockingInputStream(process.getInputStream());
         threadErrorStream = errorStreamThread(new WithoutBlockingInputStream(process.getErrorStream()),process);
+
         return true;
     }
 
@@ -56,6 +59,9 @@ public class ProcessInputStream extends VideoInputStream {
         if (isConnected()) {
             try {
                 if(process.isAlive()) {
+                   // ProcessBuilder pb = new ProcessBuilder().command(translateCommandline("taskkill /pid " + process.pid()));
+                    //pb.start().waitFor();
+                    //Runtime.getRuntime().exec("taskkill /pid " + process.pid());
                     process.destroy();
                 }
             }catch(Exception ex){}
@@ -93,5 +99,65 @@ public class ProcessInputStream extends VideoInputStream {
         });
         t.start();
         return t;
+    }
+    public static String[] translateCommandline(String toProcess) {
+        if (toProcess == null || toProcess.length() == 0) {
+            //no command? no string
+            return new String[0];
+        }
+        // parse with a simple finite state machine
+
+        final int normal = 0;
+        final int inQuote = 1;
+        final int inDoubleQuote = 2;
+        int state = normal;
+        final StringTokenizer tok = new StringTokenizer(toProcess, "\"\' ", true);
+        final ArrayList<String> result = new ArrayList<String>();
+        final StringBuilder current = new StringBuilder();
+        boolean lastTokenHasBeenQuoted = false;
+
+        while (tok.hasMoreTokens()) {
+            String nextTok = tok.nextToken();
+            switch (state) {
+                case inQuote:
+                    if ("\'".equals(nextTok)) {
+                        lastTokenHasBeenQuoted = true;
+                        state = normal;
+                    } else {
+                        current.append(nextTok);
+                    }
+                    break;
+                case inDoubleQuote:
+                    if ("\"".equals(nextTok)) {
+                        lastTokenHasBeenQuoted = true;
+                        state = normal;
+                    } else {
+                        current.append(nextTok);
+                    }
+                    break;
+                default:
+                    if ("\'".equals(nextTok)) {
+                        state = inQuote;
+                    } else if ("\"".equals(nextTok)) {
+                        state = inDoubleQuote;
+                    } else if (" ".equals(nextTok)) {
+                        if (lastTokenHasBeenQuoted || current.length() != 0) {
+                            result.add(current.toString());
+                            current.setLength(0);
+                        }
+                    } else {
+                        current.append(nextTok);
+                    }
+                    lastTokenHasBeenQuoted = false;
+                    break;
+            }
+        }
+        if (lastTokenHasBeenQuoted || current.length() != 0) {
+            result.add(current.toString());
+        }
+        if (state == inQuote || state == inDoubleQuote) {
+            throw new RuntimeException("unbalanced quotes in " + toProcess);
+        }
+        return result.toArray(new String[result.size()]);
     }
 }
