@@ -1,7 +1,9 @@
-FROM maven:3.5-jdk-8-alpine as builder
+FROM maven:3.6.3-jdk-11-slim as builder
 WORKDIR /app/code
 COPY / /app/code
 RUN mvn clean install && \
+    apt-get update && \
+    apt-get install tar wget -y && \
     wget https://get.docker.com/builds/Linux/x86_64/docker-1.12.0.tgz && \
     tar zxvf docker-1.12.0.tgz
 
@@ -17,7 +19,7 @@ ENV     LC_ALL en_US.UTF-8
 
 
 RUN apt-get update -y && \
-    apt-get install -y openjdk-8-jdk && \
+    apt-get install -y openjdk-11-jdk && \
     apt-get clean all
 
 
