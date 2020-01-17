@@ -21,11 +21,13 @@ public class ProcessInputStream extends VideoInputStream {
     private ProxyLiveConfiguration config;
     private InputStream ffmpegInputStream;
     private Channel channel;
-    private boolean alive;
+    private boolean terminate;
+
     public ProcessInputStream(String url, Channel channel, ProxyLiveConfiguration config){
         this.url= url.replaceAll("\\{user-agent\\}",config.getUserAgent()).replaceAll("\\{timeout\\}",config.getSource().getReconnectTimeout()+"").replaceAll("\\{ffmpegParameters\\}",(channel.getFfmpegParameters()!=null?channel.getFfmpegParameters():""));
         this.channel= channel;
         this.config=config;
+        this.terminate=false;
     }
 
 
@@ -36,12 +38,9 @@ public class ProcessInputStream extends VideoInputStream {
 
     @Override
     public boolean connect() throws IOException {
-        alive=true;
-        //process = Runtime.getRuntime().exec(url);
         process = new ProcessBuilder().command(translateCommandline(url)).start();
         ffmpegInputStream = new WithoutBlockingInputStream(process.getInputStream());
         threadErrorStream = errorStreamThread(new WithoutBlockingInputStream(process.getErrorStream()),process);
-
         return true;
     }
 
@@ -57,11 +56,9 @@ public class ProcessInputStream extends VideoInputStream {
 
     public void close() throws IOException {
         if (isConnected()) {
+            terminate = true;
             try {
                 if(process.isAlive()) {
-                   // ProcessBuilder pb = new ProcessBuilder().command(translateCommandline("taskkill /pid " + process.pid()));
-                    //pb.start().waitFor();
-                    //Runtime.getRuntime().exec("taskkill /pid " + process.pid());
                     process.destroy();
                 }
             }catch(Exception ex){}
@@ -81,7 +78,7 @@ public class ProcessInputStream extends VideoInputStream {
             public void run() {
                 BufferedReader br = new BufferedReader(new InputStreamReader(is));
                 try {
-                    while(proc.isAlive()){
+                    while(proc.isAlive() && !terminate){
                         if(br.ready()) {
                             try {
                                 logger.debug("[" + url + "] " + br.readLine());
