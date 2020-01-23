@@ -59,7 +59,7 @@ public class ProcessInputStream extends VideoInputStream {
             terminate = true;
             try {
                 if(process.isAlive()) {
-                    process.destroy();
+                    Runtime.getRuntime().exec(String.format("%s -9 %d", "kill", process.pid()));
                 }
             }catch(Exception ex){}
             try{
