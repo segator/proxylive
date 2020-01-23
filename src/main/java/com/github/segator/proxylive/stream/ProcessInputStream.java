@@ -57,9 +57,11 @@ public class ProcessInputStream extends VideoInputStream {
     public void close() throws IOException {
         if (isConnected()) {
             terminate = true;
+            ffmpegInputStream.close();
             try {
                 if(process.isAlive()) {
-                    Runtime.getRuntime().exec(String.format("%s -9 %d", "kill", process.pid()));
+                    //Runtime.getRuntime().exec(String.format("%s -9 %d", "kill", process.pid()));
+                    process.destroy();
                 }
             }catch(Exception ex){}
             try{
@@ -89,6 +91,7 @@ public class ProcessInputStream extends VideoInputStream {
                             Thread.sleep(200);
                         }
                     }
+                    br.close();
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
