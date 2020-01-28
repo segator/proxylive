@@ -60,8 +60,10 @@ public class ProcessInputStream extends VideoInputStream {
             ffmpegInputStream.close();
             try {
                 if(process.isAlive()) {
-                    //Runtime.getRuntime().exec(String.format("%s -9 %d", "kill", process.pid()));
                     process.destroy();
+                    if(process.isAlive()) {
+                        Runtime.getRuntime().exec(String.format("%s -9 %d", "kill", process.pid()));
+                    }
                 }
             }catch(Exception ex){}
             try{
