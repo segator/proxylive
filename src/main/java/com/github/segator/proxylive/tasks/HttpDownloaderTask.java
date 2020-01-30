@@ -197,9 +197,9 @@ public class HttpDownloaderTask implements IMultiplexerStreamer {
                 String urlHook=urlTagsReplace(channelSource.getCloseHook());
                 logger.error(getStringIdentifier("Close WebHook:"+urlHook));
                 if(url.startsWith("pipe")){
-                    Runtime.getRuntime().exec(ProxyLiveUtils.translateCommandline(url.replaceAll("pipe://",""))).waitFor();
+                    Runtime.getRuntime().exec(ProxyLiveUtils.translateCommandline(urlHook.replaceAll("pipe://",""))).waitFor();
                 }else if(url.startsWith("http")) {
-                    HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
+                    HttpURLConnection connection = (HttpURLConnection) new URL(urlHook).openConnection();
                     connection.connect();
                 }
             }

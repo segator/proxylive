@@ -76,6 +76,7 @@ channels.json
           },
           {
             "url" : "udp://225.225.201.1:8008",
+            "closeHook": "http://myServer/hook?myChannel={{channel}}&date={{now}}",
             "priority" : 2
           },
           {
@@ -83,8 +84,9 @@ channels.json
             "priority" : 3
           },
           {
-            "url" : "hlss://my.server/my/stream.m3u8", <- hls or hlss(TLS)
-            "priority" : 4
+            "url" : "hlss://my.server/my/stream.m3u8", <- hls or hlss(TLS)            
+            "closeHook": "pipe://echo \"Closed channel {{channel}} when {{now}}\" > example.txt",
+            "priority" : 4,
           },
           {
             "url" : "dashs://my.server/my/stream.m3u8",  <- dash or dashs(TLS)
