@@ -30,6 +30,7 @@ import com.github.segator.proxylive.processor.IStreamProcessor;
 import com.github.segator.proxylive.stream.*;
 
 import java.io.IOException;
+import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Date;
@@ -55,6 +56,7 @@ public class HttpDownloaderTask implements IMultiplexerStreamer {
     private boolean terminate = false;
     private boolean crashed = false;
     private int crashTimes = 0;
+    private Long now;
     private byte[] buffer;
     private int sourcePriority;
     ChannelSource channelSource;
@@ -114,10 +116,12 @@ public class HttpDownloaderTask implements IMultiplexerStreamer {
         runDate = new Date();
         int len;
         try {
+            now = new Date().getTime();
+            url= urlTagsReplace(url);
             if(requiresFFmpegStream(channelSource)) {
                 videoInputStream = new FFmpegInputStream(ProxyLiveUtils.replaceSchemes(url), channel, config);
             }else if(url.startsWith("pipe")){
-                videoInputStream = new ProcessInputStream(url.replaceAll("pipe://",""),channel,config);
+                videoInputStream = new ProcessInputStream(url.replaceAll("pipe://",""));
             }else if(url.startsWith("http")){
                 videoInputStream = new WebInputStream(new URL(url),config);
             }else if(url.startsWith("udp")){
@@ -171,6 +175,14 @@ public class HttpDownloaderTask implements IMultiplexerStreamer {
         }
     }
 
+    private String urlTagsReplace(String url) {
+        return url.replaceAll("\\{\\{now\\}\\}",now.toString()).
+                   replaceAll("\\{\\{channel\\}\\}",channel.getName()).
+                   replaceAll("\\{\\{user-agent\\}\\}",config.getUserAgent()).
+                   replaceAll("\\{\\{timeout\\}\\}",config.getSource().getReconnectTimeout()+"").
+                   replaceAll("\\{\\{ffmpegParameters\\}\\}",(channel.getFfmpegParameters()!=null?channel.getFfmpegParameters():""));
+    }
+
     private boolean requiresFFmpegStream(ChannelSource channelSource) {
         return channelSource.getType().equals("ffmpeg") || url.startsWith("hls") || url.startsWith("dash") || url.startsWith("rtmp") || url.startsWith("rtsp");
     }
@@ -178,6 +190,19 @@ public class HttpDownloaderTask implements IMultiplexerStreamer {
     private void closeWebStream() {
         try {
             videoInputStream.close();
+        }catch(Exception ex) {
+        }
+        try{
+            if(channelSource.getCloseHook()!=null){
+                String urlHook=urlTagsReplace(channelSource.getCloseHook());
+                logger.error(getStringIdentifier("Close WebHook:"+urlHook));
+                if(url.startsWith("pipe")){
+                    Runtime.getRuntime().exec(ProxyLiveUtils.translateCommandline(url.replaceAll("pipe://",""))).waitFor();
+                }else if(url.startsWith("http")) {
+                    HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
+                    connection.connect();
+                }
+            }
         } catch (Exception ex) {
         }
     }

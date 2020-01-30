@@ -2,6 +2,7 @@ package com.github.segator.proxylive.entity;
 
 public class ChannelSource {
     private String url;
+    private String closeHook;
     private Integer priority;
     private String type="raw";
     public ChannelSource(){
@@ -31,6 +32,14 @@ public class ChannelSource {
 
     public String getType() {
         return type;
+    }
+
+    public String getCloseHook() {
+        return closeHook;
+    }
+
+    public void setCloseHook(String closeHook) {
+        this.closeHook = closeHook;
     }
 
     public void setType(String type) {
