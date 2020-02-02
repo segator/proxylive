@@ -65,7 +65,7 @@ public class PlexAuthenticationService implements AuthenticationService {
         PlexAuthentication plexAuthConfig = configuration.getAuthentication().getPlex();
         if(new Date().getTime()-lastUpdate>+(plexAuthConfig.getRefresh()*1000)) {
             List<String> allowedUsers = new ArrayList();
-
+            allowedUsers.add(plexAuthConfig.getAdminUser());
             URL url = new URL(String.format("https://%s:%s@plex.tv/api/users", URLEncoder.encode(plexAuthConfig.getAdminUser(), "UTF-8"), URLEncoder.encode(plexAuthConfig.getAdminPass(), "UTF-8")));
             HttpURLConnection connection = createConnection(url);
             connection.connect();
