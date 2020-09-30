@@ -133,7 +133,8 @@ public class ChannelURLService implements ChannelService {
             readPicons(channels);
             //fix TVH Urls
             for (Channel channel:channels) {
-                for(ChannelSource channelSource: channel.getSources()){
+                for(int i=1;i<=channel.getSources().size();i++){
+                    ChannelSource channelSource = channel.getSourceByPriority(i);
                     String sourceURL= channelSource.getUrl();
                     if(sourceURL.startsWith("tvh://") || sourceURL.startsWith("tvhs://")){
                         sourceURL = ProxyLiveUtils.replaceSchemes(sourceURL);
