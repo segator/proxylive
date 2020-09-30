@@ -133,10 +133,11 @@ public class ChannelURLService implements ChannelService {
             readPicons(channels);
             //fix TVH Urls
             for (Channel channel:channels) {
+                source:
                 for(int i=1;i<=channel.getSources().size();i++){
                     ChannelSource channelSource = channel.getSourceByPriority(i);
                     String sourceURL= channelSource.getUrl();
-                    if(sourceURL.startsWith("tvh://") || sourceURL.startsWith("tvhs://")){
+                      if(sourceURL.startsWith("tvh://") || sourceURL.startsWith("tvhs://")){
                         sourceURL = ProxyLiveUtils.replaceSchemes(sourceURL);
                         URL tvhURL = new URL(sourceURL);
                         tvhURL = new URL(tvhURL.getProtocol()+"://"+ tvhURL.getUserInfo() + "@"+tvhURL.getHost()+":"+tvhURL.getPort()+"/");
@@ -155,14 +156,14 @@ public class ChannelURLService implements ChannelService {
                                     if(((String)tvhChannelRefObj.get("val")).toLowerCase().trim().equals(tvhUUID.toLowerCase().trim())){
                                         found=true;
                                         channelSource.setUrl(new URL(tvhURL,"/stream/channel/"+tvhChannelRefObj.get("key")).toString());
-                                        break;
+                                        break source;
                                     }
                                 }
                                 if(!found){
                                     //System.out.println("Channel " + tvhUUID + " not found.. canceling update");
                                     throw new Exception("Channel " + tvhUUID + " not found.. canceling update");
                                 }
-                                break;
+                                break source;
 
                         }
 
