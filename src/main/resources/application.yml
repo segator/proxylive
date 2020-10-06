@@ -16,9 +16,8 @@ management:
                 enabled: true
     security:
         enabled: false
-
 geoIP:
-    enabled: true
+    enabled: false
     url: https://geolite.maxmind.com/download/geoip/database/GeoLite2-City.tar.gz
 source:
     epg:
@@ -33,9 +32,6 @@ ffmpeg:
         -
             alias: "aac"
             parameters: "-i {input} {channelParameters} -sn -ac 2 -c:a aac -b:a 320k -c:v copy"
-        -
-            alias: "240p"
-            parameters: "-i {input} {channelParameters} -sn -c:a:0 aac -ac 2 -b:a 64k -c:v libx264 -tune zerolatency -g 10 -vprofile high -level 4.0 -crf 18 -movflags +faststart -bufsize 15000k -maxrate 300k  -preset veryslow -vf scale=-1:244,yadif=0"
         -
             alias: "360p"
             parameters: "-i {input} {channelParameters} -sn -c:a:0 aac -ac 2 -b:a 96k -c:v libx264 -tune zerolatency -g 10 -vprofile high -level 4.0 -crf 18 -movflags +faststart -bufsize 15000k -maxrate 700k  -preset veryslow -vf scale=-1:360,yadif=0"
