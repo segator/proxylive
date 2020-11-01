@@ -24,6 +24,7 @@ RUN apt-get update -y && \
 
 
 ENV DEBUG_MODE false
+ENV JAVA_OPTS="-Xms256m -Xmx1024m"
 ENV JAVA_HOME /usr/java/default
 COPY entrypoint.sh /entrypoint.sh
 EXPOSE 8080

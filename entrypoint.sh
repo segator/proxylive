@@ -1,7 +1,7 @@
 #!/bin/bash
-debug_string=""
+DEBUG_STRING=""
 if $DEBUG_MODE ; then
-    debug_string="-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=6006"
+    DEBUG_STRING="-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=6006"
 fi
-java $debug_string -jar /app/proxyLive.jar $@
+java $DEBUG_STRING $JAVA_OPTS -jar /app/proxyLive.jar $@
 
