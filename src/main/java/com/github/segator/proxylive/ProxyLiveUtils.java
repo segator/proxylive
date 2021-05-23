@@ -98,7 +98,7 @@ public class ProxyLiveUtils {
 
     }
     public static String getURL(HttpServletRequest req) {
-        return getURL(req,false);
+        return getURL(req,true);
     }
     public static String getURL(HttpServletRequest req,boolean withParameters) {
         String servletPath = req.getServletPath();   // /servlet/MyServlet
