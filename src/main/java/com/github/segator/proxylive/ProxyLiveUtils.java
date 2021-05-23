@@ -98,6 +98,9 @@ public class ProxyLiveUtils {
 
     }
     public static String getURL(HttpServletRequest req) {
+        return getURL(req,false);
+    }
+    public static String getURL(HttpServletRequest req,boolean withParameters) {
         String servletPath = req.getServletPath();   // /servlet/MyServlet
         String pathInfo = req.getPathInfo();         // /a/b;c=123
         String queryString = req.getQueryString();          // d=789
@@ -109,7 +112,7 @@ public class ProxyLiveUtils {
         if (pathInfo != null) {
             url.append(pathInfo);
         }
-        if (queryString != null) {
+        if (queryString != null && withParameters) {
             url.append("?").append(queryString);
         }
         return url.toString();

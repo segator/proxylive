@@ -84,6 +84,9 @@ public class HLSDirectTask implements IStreamTask {
 
     public HLSDirectTask(Channel channel, String profile) {
         this.profile = profile;
+        if(profile.equals("raw")){
+            profile = "aac";
+        }
         this.channel = channel;
         this.segmentsInputs = new HashMap();
         //this.readableSegments = new ArrayList();
@@ -92,6 +95,7 @@ public class HLSDirectTask implements IStreamTask {
 
     @PostConstruct
     public void initializeBean() {
+        //url = "http://localhost:"+serverPort+"/view/aac/" + channel.getId()+"?user=internal&token="+config.getInternalToken();
         url = "http://localhost:"+serverPort+"/view/"+profile+"/" + channel.getId()+"?user=internal&token="+config.getInternalToken();
     }
     @Override

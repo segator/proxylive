@@ -30,6 +30,24 @@ package com.github.segator.proxylive.config;
 public class FFMpegProfile {
     private String alias;
     private String parameters;
+    private Integer adaptiveBandWith;
+    private String adaptiveResolution;
+
+    public Integer getAdaptiveBandWith() {
+        return adaptiveBandWith;
+    }
+
+    public void setAdaptiveBandWith(Integer adaptiveBandWith) {
+        this.adaptiveBandWith = adaptiveBandWith;
+    }
+
+    public String getAdaptiveResolution() {
+        return adaptiveResolution;
+    }
+
+    public void setAdaptiveResolution(String adaptiveResolution) {
+        this.adaptiveResolution = adaptiveResolution;
+    }
 
     public String getAlias() {
         return alias;

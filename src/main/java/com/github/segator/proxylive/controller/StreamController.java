@@ -345,14 +345,21 @@ public class StreamController {
     public void dispatchHLS(@PathVariable("profile") String profile, @PathVariable("channelID") String channelID,
             @PathVariable String file, HttpServletRequest request, HttpServletResponse response) throws Exception {
         long now = new Date().getTime();
-        if(!authenticate(request,response)){
-            response.setStatus(HttpStatus.UNAUTHORIZED.value());
-            return;
+        if(file.equals("playlist.m3u8")) {
+            if (!authenticate(request, response)) {
+                response.setStatus(HttpStatus.UNAUTHORIZED.value());
+                return;
+            }
         }
         if(!config.getFfmpeg().getHls().getEnabled()){
             response.setStatus(404);
             return;
         }
+        if(profile.equals("adaptive")){
+            uploadFileStream(response, createAdaptivePlaylist(channelID));
+            return;
+        }
+
         String clientIdentifier = ProxyLiveUtils.getRequestIP(request) + ProxyLiveUtils.getBrowserInfo(request);
         Channel channel = channelService.getChannelByID(channelID);
         FFMpegProfile ffmpegProfile = ffmpegProfileService.getProfile(profile);
@@ -382,27 +389,7 @@ public class StreamController {
                 return;
             }*/
             if (downloadFile != null) {
-                response.setStatus(200);
-                //response.setHeader(file, file);
-                byte[] buffer = new byte[config.getBuffers().getChunkSize()];
-                OutputStream output = response.getOutputStream();
-                int len = 0;
-                try {
-                    while ((len = downloadFile.read(buffer)) != -1) {
-                        output.write(buffer, 0, len);
-                    }
-                } catch (Exception ex) {
-
-                } finally {
-                    try {
-                        output.close();
-                    } catch (Exception ex2) {
-                    }
-                    try {
-                        downloadFile.close();
-                    } catch (Exception ex2) {
-                    }
-                }
+                uploadFileStream(response, downloadFile);
             } else {
                 response.setStatus(404);
             }
@@ -411,6 +398,43 @@ public class StreamController {
             //    response.setStatus(404);
             //}
     }
+
+    private InputStream createAdaptivePlaylist(String channelName) {
+        StringBuilder sb= new StringBuilder("#EXTM3U\n" +
+                "#EXT-X-VERSION:3\n");
+        for (FFMpegProfile profile : config.getFfmpeg().getProfiles()) {
+            if(profile.getAdaptiveBandWith()!=null && profile.getAdaptiveResolution()!=null){
+                sb.append("#EXT-X-STREAM-INF:BANDWIDTH="+profile.getAdaptiveBandWith()+",RESOLUTION="+profile.getAdaptiveResolution()+"\n"+
+                        "/view/"+profile.getAlias()+"/"+channelName+"/playlist.m3u8\n");
+            }
+        }
+        return new ByteArrayInputStream(sb.toString().getBytes());
+    }
+
+    private void uploadFileStream(HttpServletResponse response, InputStream downloadFile) throws IOException {
+        response.setStatus(200);
+        //response.setHeader(file, file);
+        byte[] buffer = new byte[config.getBuffers().getChunkSize()];
+        OutputStream output = response.getOutputStream();
+        int len = 0;
+        try {
+            while ((len = downloadFile.read(buffer)) != -1) {
+                output.write(buffer, 0, len);
+            }
+        } catch (Exception ex) {
+
+        } finally {
+            try {
+                output.close();
+            } catch (Exception ex2) {
+            }
+            try {
+                downloadFile.close();
+            } catch (Exception ex2) {
+            }
+        }
+    }
+
     @RequestMapping(value="/hls/dummy/{fileName:^(?i)playlist.m3u8|dummy\\d*.ts$}",method=RequestMethod.GET)
     private void uploadFakeHLSFile(@PathVariable String fileName, HttpServletRequest request, HttpServletResponse response) throws IOException, InterruptedException {
         File file = new File("C:\\lol\\"+fileName);
@@ -426,28 +450,7 @@ public class StreamController {
         response.setHeader(HttpHeaders.CACHE_CONTROL, "no-cache");
         response.setHeader(HttpHeaders.CONTENT_LENGTH, ""+file.length());
         response.setHeader(HttpHeaders.CONTENT_TYPE, getMediaType(fileName).toString());
-        response.setStatus(200);
-        //response.setHeader(file, file);
-        byte[] buffer = new byte[config.getBuffers().getChunkSize()];
-
-        OutputStream output = response.getOutputStream();
-        int len = 0;
-        try {
-            while ((len = fis.read(buffer)) != -1) {
-                output.write(buffer, 0, len);
-            }
-        } catch (Exception ex) {
-
-        } finally {
-            try {
-                output.close();
-            } catch (Exception ex2) {
-            }
-            try {
-                fis.close();
-            } catch (Exception ex2) {
-            }
-        }
+        uploadFileStream(response, fis);
 
     }
 
@@ -490,7 +493,7 @@ public class StreamController {
             if(file.equals("playlist.m3u8")){
                 StringBuilder playlistEdit = new StringBuilder();
                 BufferedReader reader = new BufferedReader(new InputStreamReader(downloadFile));
-                String currentURL =ProxyLiveUtils.getURL(request);
+                String currentURL =ProxyLiveUtils.getURL(request,false);
                 while(reader.ready()) {
                     String line = reader.readLine();
                     if(line.endsWith(".ts")){
@@ -500,7 +503,9 @@ public class StreamController {
                 }
                 downloadFile.close();
                 downloadFile = IOUtils.toInputStream(playlistEdit.toString());
-
+                respHeaders.setHeader(HttpHeaders.CACHE_CONTROL, "no-cache");
+            }else{
+                respHeaders.setHeader(HttpHeaders.CACHE_CONTROL, "public,max-age=360");
             }
             fileSize = Long.valueOf(downloadFile.available());
         } else {
@@ -514,7 +519,7 @@ public class StreamController {
         respHeaders.setHeader("Connection", "close");//keep-alive
         respHeaders.setHeader("Access-Control-Allow-Origin","*");
         respHeaders.setHeader("Access-Control-Expose-Headers","Content-Length");
-        respHeaders.setHeader(HttpHeaders.CACHE_CONTROL, "no-cache");
+
         respHeaders.setHeader(HttpHeaders.CONTENT_LENGTH, fileSize.toString());
         respHeaders.setHeader(HttpHeaders.CONTENT_TYPE, getMediaType(file).toString());
         return downloadFile;
