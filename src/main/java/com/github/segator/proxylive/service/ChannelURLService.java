@@ -97,14 +97,18 @@ public class ChannelURLService implements ChannelService {
                     cloneCommand.setURI(gitSource.getRepository());
                     cloneCommand.setDirectory(tmpGitPath);
                     cloneCommand.setCloneAllBranches(true);
-                    cloneCommand.setBranch(gitSource.getBranch());
+                    //cloneCommand.setBranch(gitSource.getBranch());
+                    //List<String> branches = new ArrayList<String>();
+                    //branches.add("refs/heads/"+gitSource.getBranch());
+                    //cloneCommand.setBranchesToClone(branches);
+                    //cloneCommand.setBranch("refs/heads/"+gitSource.getBranch());
                     setGitCredentials(cloneCommand);
                     git = cloneCommand.call();
-                    PullCommand pull = git.pull().setRemote("origin");
+                    PullCommand pull = git.pull();
                     setGitCredentials(pull);
                     pull.call();
                 }else {
-                    PullCommand pullCommand = git.pull().setRemote("origin");
+                    PullCommand pullCommand = git.pull();
                     setGitCredentials(pullCommand);
                     PullResult pulLResult = pullCommand.call();
                     if(!pulLResult.isSuccessful()){
