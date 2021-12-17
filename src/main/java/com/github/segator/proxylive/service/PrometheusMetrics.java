@@ -23,12 +23,16 @@ import java.util.stream.Collectors;
 @Component
 public class PrometheusMetrics implements MeterBinder {
 
-    @Autowired
-    private StreamProcessorsSession streamProcessorsSession;
-    @Autowired
-    private ProcessorTasks tasksProcessor;
+    private final StreamProcessorsSession streamProcessorsSession;
+    private final ProcessorTasks tasksProcessor;
     private  MeterRegistry meterRegistry;
     private List<Meter> activeCustomMetrics;
+
+    public PrometheusMetrics(StreamProcessorsSession streamProcessorsSession, ProcessorTasks tasksProcessor) {
+        this.streamProcessorsSession = streamProcessorsSession;
+        this.tasksProcessor = tasksProcessor;
+    }
+
     @Override
     public void bindTo(MeterRegistry meterRegistry) {
         this.meterRegistry=meterRegistry;

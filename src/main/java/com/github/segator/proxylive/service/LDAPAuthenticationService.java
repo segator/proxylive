@@ -6,13 +6,13 @@
 package com.github.segator.proxylive.service;
 
 import com.github.segator.proxylive.config.LDAPAutentication;
-import com.github.segator.proxylive.config.PlexAuthentication;
 import com.github.segator.proxylive.config.ProxyLiveConfiguration;
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.ProtocolException;
-import java.util.Hashtable;
-import java.util.List;
+import org.json.simple.parser.ParseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
 import javax.annotation.PostConstruct;
 import javax.naming.Context;
 import javax.naming.NamingEnumeration;
@@ -22,11 +22,11 @@ import javax.naming.directory.SearchControls;
 import javax.naming.directory.SearchResult;
 import javax.naming.ldap.InitialLdapContext;
 import javax.naming.ldap.LdapContext;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.ParseException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.ProtocolException;
+import java.util.Hashtable;
+import java.util.List;
 
 /**
  *
@@ -35,8 +35,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class LDAPAuthenticationService implements AuthenticationService {
     private final Logger logger = LoggerFactory.getLogger(LDAPAuthenticationService.class);
     private LDAPAutentication ldapAuthConfig;
-    @Autowired
-    private ProxyLiveConfiguration configuration;
+    private final ProxyLiveConfiguration configuration;
+
+    public LDAPAuthenticationService(ProxyLiveConfiguration configuration) {
+        this.configuration = configuration;
+    }
 
     @Override
     public boolean loginUser(String user, String password) throws Exception {

@@ -27,9 +27,12 @@ public class EPGService {
     private final Logger logger = LoggerFactory.getLogger(EPGService.class);
     private File tempEPGFile;
 
-    @Autowired
-    private ProxyLiveConfiguration config;
+    private final ProxyLiveConfiguration config;
     private long lastUpdate=0;
+
+    public EPGService(ProxyLiveConfiguration config) {
+        this.config = config;
+    }
 
     @Scheduled(fixedDelay = 600 * 1000) //Every 100 Minute
     @PostConstruct

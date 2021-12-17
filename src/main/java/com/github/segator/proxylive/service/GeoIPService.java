@@ -25,8 +25,11 @@ public class GeoIPService {
     private final Logger logger = LoggerFactory.getLogger(GeoIPService.class);
     private File tmpGEOIPFile;
     private DatabaseReader geoIPDB;
-    @Autowired
-    private ProxyLiveConfiguration config;
+    private final ProxyLiveConfiguration config;
+
+    public GeoIPService(ProxyLiveConfiguration config) {
+        this.config = config;
+    }
 
     public boolean isServiceEnabled(){
         return config.getGeoIP().isEnabled();

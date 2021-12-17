@@ -12,13 +12,13 @@ import java.util.*;
 @Service
 public class TokensService {
 
-    @Autowired
-    private ProxyLiveConfiguration config;
+    private final ProxyLiveConfiguration config;
 
     private Map<String,AuthToken> tokensMap;
 
-    public TokensService() {
+    public TokensService(ProxyLiveConfiguration config) {
         tokensMap=new HashMap();
+        this.config = config;
     }
 
     public AuthToken getTokenByID(String id){

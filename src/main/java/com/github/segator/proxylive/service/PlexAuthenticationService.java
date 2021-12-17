@@ -7,26 +7,6 @@ package com.github.segator.proxylive.service;
 
 import com.github.segator.proxylive.config.PlexAuthentication;
 import com.github.segator.proxylive.config.ProxyLiveConfiguration;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.ProtocolException;
-import java.net.URL;
-import java.net.URLDecoder;
-import java.net.URLEncoder;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.Date;
-import java.util.List;
-import javax.annotation.PostConstruct;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-
-import com.github.segator.proxylive.tasks.DirectTranscodeTask;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
@@ -34,22 +14,40 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
+import javax.annotation.PostConstruct;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.*;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.Date;
+import java.util.List;
+
 /**
  *
  * @author isaac
  */
+
 public class PlexAuthenticationService implements AuthenticationService {
     Logger logger = LoggerFactory.getLogger(PlexAuthenticationService.class);
     private long lastUpdate=0;
     private List<String> allowedUsers;
-    @Autowired
-    private ProxyLiveConfiguration configuration;
+    private final ProxyLiveConfiguration configuration;
+
+    public PlexAuthenticationService(ProxyLiveConfiguration configuration) {
+        this.configuration = configuration;
+    }
 
     @Override
     public boolean loginUser(String user, String password) throws MalformedURLException, IOException, ParseException {

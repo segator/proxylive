@@ -44,12 +44,18 @@ import org.springframework.web.bind.annotation.*;
 @Controller
 public class WSController {
 
+    private final ProcessorTasks tasksProcessor;
+    private final StreamProcessorsSession streamProcessorsSession;
+    private final TokensService tokenService;
+
+
+
     @Autowired
-    private ProcessorTasks tasksProcessor;
-    @Autowired
-    private StreamProcessorsSession streamProcessorsSession;
-    @Autowired
-    private TokensService tokenService;
+    public WSController(StreamProcessorsSession streamProcessorsSession, TokensService tokenService,ProcessorTasks tasksProcessor) {
+        this.streamProcessorsSession = streamProcessorsSession;
+        this.tokenService = tokenService;
+        this.tasksProcessor = tasksProcessor;
+    }
 
     @RequestMapping(value = "/ws/getTasks", produces = "application/json")
     public @ResponseBody

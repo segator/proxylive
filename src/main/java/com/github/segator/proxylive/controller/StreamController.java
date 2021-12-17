@@ -49,12 +49,11 @@ import java.util.*;
 import java.util.regex.Pattern;
 
 import org.apache.commons.io.IOUtils;
-import static org.hibernate.validator.internal.util.CollectionHelper.newArrayList;
+
 
 import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
@@ -79,29 +78,28 @@ public class StreamController {
 
     private final Logger logger = LoggerFactory.getLogger(StreamController.class);
 
-    @Autowired
-    private ApplicationContext context;
-    @Autowired
-    private ProxyLiveConfiguration config;
-    @Autowired
-    private AuthenticationService authService;
-    @Autowired
-    private ChannelService channelService;
-    @Autowired
-    private EPGService epgService;
-    @Autowired
-    FFmpegProfilerService ffmpegProfileService;
+    private final ApplicationContext context;
+    private final ProxyLiveConfiguration config;
+    private final AuthenticationService authService;
+    private final ChannelService channelService;
+    private final EPGService epgService;
+    private final FFmpegProfilerService ffmpegProfileService;
+    private final TokensService tokenService;
+    private final StreamProcessorsSession streamProcessorsSession;
 
-    @Autowired
-    private TokensService tokenService;
+    public StreamController(ApplicationContext context, ProxyLiveConfiguration config, AuthenticationService authService, ChannelService channelService, EPGService epgService, FFmpegProfilerService ffmpegProfileService, TokensService tokenService, StreamProcessorsSession streamProcessorsSession) {
+        this.context = context;
+        this.config = config;
+        this.authService = authService;
+        this.channelService = channelService;
+        this.epgService = epgService;
+        this.ffmpegProfileService = ffmpegProfileService;
+        this.tokenService = tokenService;
+        this.streamProcessorsSession = streamProcessorsSession;
+    }
 
-    @Autowired
-    private StreamProcessorsSession streamProcessorsSession;
 
-
-
-
-    private boolean authenticate(HttpServletRequest request, HttpServletResponse response) throws Exception {
+    private boolean authenticate(HttpServletRequest request) throws Exception {
         MultiValueMap<String, String> parameters = UriComponentsBuilder.fromUriString(ProxyLiveUtils.getURL(request)).build().getQueryParams();
 
         String token = parameters.getFirst("token");
@@ -144,7 +142,7 @@ public class StreamController {
     public void dispatchStream(@PathVariable("profile") String profile, @PathVariable("channelID") String channelID,
             HttpServletRequest request, HttpServletResponse response) throws Exception {
 
-        if(!authenticate(request,response)){
+        if(!authenticate(request)){
             response.setStatus(HttpStatus.UNAUTHORIZED.value());
             return;
         }
@@ -182,16 +180,16 @@ public class StreamController {
                             lastReaded = new Date().getTime();
                             clientStream.write(buffer, 0, len);
                         } else {
-                            if(!iStreamProcessor.isConnected()){
+                            if (!iStreamProcessor.isConnected()) {
                                 throw new IOException("Disconnected" + client + " because task crashed on " + iStreamProcessor);
-                            }else if((new Date().getTime() - lastReaded)  > config.getStreamTimeoutMilis()) {
+                            } else if ((new Date().getTime() - lastReaded) > config.getStreamTimeoutMilis()) {
                                 throw new IOException("Disconnected" + client + " because timeout on " + iStreamProcessor);
                             /*}else if((new Date().getTime() - lastReaded)  > 500 && profile.equals("raw")) {
                                 if(fis.getFilePointer()==fis.length()){fis.seek(0);}
                                 len = fis.read(buffer);
                                 clientStream.write(buffer, 0, len);
                                 Thread.sleep(100);*/
-                            }else {
+                            } else {
                                 Thread.sleep(10);
                             }
                         }
@@ -262,7 +260,7 @@ public class StreamController {
     public @ResponseBody
     String generatePlaylist(HttpServletRequest request, HttpServletResponse response, @PathVariable("profile") String profile, @PathVariable("format") String format) throws MalformedURLException, ProtocolException, IOException, ParseException, Exception {
         MultiValueMap<String, String> parameters = UriComponentsBuilder.fromUriString(ProxyLiveUtils.getURL(request)).build().getQueryParams();
-        if(!authenticate(request,response)){
+        if(!authenticate(request)){
             response.setStatus(HttpStatus.UNAUTHORIZED.value());
             return "invalid user";
         }
@@ -346,7 +344,7 @@ public class StreamController {
             @PathVariable String file, HttpServletRequest request, HttpServletResponse response) throws Exception {
         long now = new Date().getTime();
         if(file.equals("playlist.m3u8")) {
-            if (!authenticate(request, response)) {
+            if (!authenticate(request)) {
                 response.setStatus(HttpStatus.UNAUTHORIZED.value());
                 return;
             }
