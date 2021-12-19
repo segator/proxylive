@@ -19,7 +19,7 @@ ENV     LC_ALL en_US.UTF-8
 
 
 RUN apt-get update -y && \
-    apt-get install -y openjdk-11-jdk && \
+    apt-get install -y openjdk-14-jdk && \
     apt-get clean all
 
 
