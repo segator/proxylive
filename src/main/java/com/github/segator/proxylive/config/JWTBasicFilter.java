@@ -72,6 +72,7 @@ public class JWTBasicFilter  extends OncePerRequestFilter {
                             }
                         }
                         response.setHeader("Location", uriBuilder.toString());
+                        return;
                     }
                     SecurityContextHolder.clearContext();
                 }
