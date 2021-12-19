@@ -123,7 +123,7 @@ public class HttpDownloaderTask implements IMultiplexerStreamer {
             }else if(url.startsWith("udp")){
                 videoInputStream = new UDPInputStream(url,config);
             }else{
-                throw new Exception("unkown format url" + url);
+                throw new Exception("unknown format url" + url);
             }
             logger.debug(getStringIdentifier("Get Stream"));
             if (videoInputStream.connect()) {

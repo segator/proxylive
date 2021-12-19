@@ -101,14 +101,15 @@ public class StreamController {
         IStreamMultiplexerProcessor iStreamProcessor = (IStreamMultiplexerProcessor) context.getBean("StreamProcessor", ProxyLiveConstants.STREAM_MODE, channel.getName(), channel, profile);
         ClientInfo client = streamProcessorsSession.manage(iStreamProcessor, request,authentication.getPrincipal().toString());
 
-        logger.debug("Open Stream " + channelID + " by " + client.getClientUser());
+        logger.debug("[{}] Open Stream {} by {}",request.getSession().getId(),channelID,client.getClientUser());
         iStreamProcessor.start();
         if (iStreamProcessor.isConnected()) {
             response.setHeader("Connection", "close");
             response.setHeader("Content-Type", "video/mpeg");
             response.setStatus(HttpStatus.OK.value());
             OutputStream clientStream = response.getOutputStream();
-            if(!clientStream.getClass().getName().equals("javax.servlet.http.NoBodyOutputStream")) {
+            if(!clientStream.getClass().getName().contains("NoBodyOutputStream")) {
+                logger.debug("[{}] {}",request.getSession().getId(),clientStream.getClass().getName());
                 InputStream multiplexedInputStream = iStreamProcessor.getMultiplexedInputStream();
                 byte[] buffer = new byte[config.getBuffers().getChunkSize()];
                 int len;
@@ -144,15 +145,12 @@ public class StreamController {
                     }
                 }
             }
-            iStreamProcessor.stop(false);
-            streamProcessorsSession.removeClientInfo(client, iStreamProcessor);
-
         } else {
-            iStreamProcessor.stop(false);
-            streamProcessorsSession.removeClientInfo(client, iStreamProcessor);
             response.setStatus(HttpStatus.NOT_FOUND.value());
         }
-        logger.debug("Close Stream " + channelID  + " by " + client.getClientUser());
+        iStreamProcessor.stop(false);
+        streamProcessorsSession.removeClientInfo(client, iStreamProcessor);
+        logger.debug("[{}] Close Stream {} by {}",request.getSession().getId(),channelID,client.getClientUser());
     }
 
     @RequestMapping(value = "/crossdomain.xml", method = RequestMethod.GET)
