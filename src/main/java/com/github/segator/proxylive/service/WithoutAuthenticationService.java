@@ -5,6 +5,10 @@
  */
 package com.github.segator.proxylive.service;
 
+import com.github.segator.proxylive.helper.AuthorityRoles;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -20,10 +24,13 @@ public class WithoutAuthenticationService implements AuthenticationService {
     }
 
     @Override
-    public List<String> getUserGroups(String user) {
-        ArrayList<String> userGroups = new ArrayList();
-        userGroups.add("all");
-        return userGroups;
+    public List<GrantedAuthority> getUserRoles(String user) {
+        ArrayList<GrantedAuthority> roles = new ArrayList();
+
+        roles.add(new SimpleGrantedAuthority(AuthorityRoles.USER.getAuthority()));
+        roles.add(new SimpleGrantedAuthority(AuthorityRoles.ADMIN.getAuthority()));
+        roles.add(new SimpleGrantedAuthority(AuthorityRoles.ALLOW_ENCODING.getAuthority()));
+        return roles;
     }
 
 }

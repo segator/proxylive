@@ -23,6 +23,7 @@
  */
 package com.github.segator.proxylive.config;
 
+import com.github.segator.proxylive.helper.JwtHelper;
 import com.github.segator.proxylive.tasks.DirectTranscodeTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,7 +41,8 @@ import javax.annotation.PostConstruct;
 @Configuration
 @ConfigurationProperties
 public class ProxyLiveConfiguration {
-    Logger logger = LoggerFactory.getLogger(DirectTranscodeTask.class);
+    private final Logger logger = LoggerFactory.getLogger(DirectTranscodeTask.class);
+    private final JwtHelper jwtHelper;
     private BufferingConfiguration buffers;
     private FFMpegConfiguration ffmpeg;
     private HttpLiveSource source;
@@ -48,20 +50,13 @@ public class ProxyLiveConfiguration {
     private AuthenticationConfiguration authentication;
     private String userAgent;
     private int streamTimeout;
-    private boolean internalConnection;
-    private String internalToken;
+
+    public ProxyLiveConfiguration(JwtHelper jwtHelper) {
+        this.jwtHelper = jwtHelper;
+    }
 
     @PostConstruct
     public void initializeBean() {
-        int count=40;
-        final String VALIDCHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-        StringBuilder builder = new StringBuilder();
-        while (count-- != 0) {
-            int character = (int)(Math.random()*VALIDCHARS.length());
-            builder.append(VALIDCHARS.charAt(character));
-        }
-        internalToken= builder.toString();
-        logger.info("Your internal token is:"+internalToken);
 
         //If tvheadend input is set complete configuration
         if(source.getTvheadendURL()!=null){
@@ -127,9 +122,6 @@ public class ProxyLiveConfiguration {
         this.streamTimeout = streamTimeout;
     }
 
-    public String getInternalToken() {
-        return internalToken;
-    }
 
     public String getUserAgent() {
         return userAgent;

@@ -28,6 +28,7 @@ import com.github.segator.proxylive.config.ProxyLiveConfiguration;
 import com.github.segator.proxylive.entity.Channel;
 import com.github.segator.proxylive.processor.IStreamProcessor;
 import com.github.segator.proxylive.profiler.FFmpegProfilerService;
+import com.github.segator.proxylive.service.TokenService;
 import com.github.segator.proxylive.stream.ClientBroadcastedInputStream;
 import com.github.segator.proxylive.stream.WithoutBlockingInputStream;
 
@@ -60,6 +61,8 @@ public class HLSDirectTask implements IStreamTask {
     @Autowired
     private FFmpegProfilerService ffmpegProfilerService;
     @Autowired
+    private TokenService tokenService;
+    @Autowired
     private ProxyLiveConfiguration config;
     @Value("${local.server.port}")
     int serverPort;
@@ -67,7 +70,6 @@ public class HLSDirectTask implements IStreamTask {
     private final String profile;
     private final Channel channel;
     private Thread inputThread;
-    private String url;
     private Process process;
     private Date runDate;
     private String hlsParameters,transcodeParameters;
@@ -75,10 +77,8 @@ public class HLSDirectTask implements IStreamTask {
     private boolean crashed = false;
     private boolean internalCrash = false;
     private int crashedTimes = 0;
-    private byte[] playlistBuffer;
     private final Map<String, List<FileInputStream>> segmentsInputs;
     private SimpleDateFormat dateFormatter;
-    private long playlistCount;
     private Long lastAccess;
 
 
@@ -89,15 +89,17 @@ public class HLSDirectTask implements IStreamTask {
         }
         this.channel = channel;
         this.segmentsInputs = new HashMap();
-        //this.readableSegments = new ArrayList();
-        this.playlistCount = 0;
     }
 
     @PostConstruct
     public void initializeBean() {
-        //url = "http://localhost:"+serverPort+"/view/aac/" + channel.getId()+"?user=internal&token="+config.getInternalToken();
-        url = "http://localhost:"+serverPort+"/view/"+profile+"/" + channel.getId()+"?user=internal&token="+config.getInternalToken();
     }
+
+    public String getAuthenticatedURL(){
+        String token = tokenService.createServiceAccountRequestToken(String.format("DirectTranscode-%s",channel.getId()));
+        return String.format("%s?&token=%s",getSource(),token);
+    }
+
     @Override
     public String toString() {
         return getIdentifier();
@@ -105,7 +107,7 @@ public class HLSDirectTask implements IStreamTask {
 
     @Override
     public String getSource() {
-        return url;
+        return String.format("http://localhost:%s/view/%s/%s",serverPort,profile,channel.getId());
     }
 
     @Override
@@ -163,7 +165,7 @@ public class HLSDirectTask implements IStreamTask {
             if (isTerminated()) {
                 return;
             }
-            String ffmpegCommand = ffmpegExecutable +  " -i " + url + " " +  transcodeParameters +" "+ hlsParameters;
+            String ffmpegCommand = ffmpegExecutable +  " -i " + getAuthenticatedURL() + " " +  transcodeParameters +" "+ hlsParameters;
             logger.debug("[" + getIdentifier() + "] HLS ffmpeg command: "+ffmpegCommand);
             process = Runtime.getRuntime().exec(ffmpegCommand);
 

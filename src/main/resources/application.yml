@@ -14,8 +14,6 @@ management:
         export:
             prometheus:
                 enabled: true
-    security:
-        enabled: false
 geoIP:
     enabled: false
     url: https://geolite.maxmind.com/download/geoip/database/GeoLite2-City.tar.gz

@@ -4,7 +4,7 @@ public class GitSource {
     private String repository;
     private String user;
     private String pass;
-    private String branch="mater";
+    private String branch="master";
 
     public String getRepository() {
         return repository;

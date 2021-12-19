@@ -7,11 +7,12 @@ package com.github.segator.proxylive.service;
 
 import com.github.segator.proxylive.config.LDAPAutentication;
 import com.github.segator.proxylive.config.ProxyLiveConfiguration;
+import com.github.segator.proxylive.helper.AuthorityRoles;
 import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import javax.annotation.PostConstruct;
 import javax.naming.Context;
@@ -25,6 +26,7 @@ import javax.naming.ldap.LdapContext;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.ProtocolException;
+import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
 
@@ -47,8 +49,12 @@ public class LDAPAuthenticationService implements AuthenticationService {
     }
 
     @Override
-    public List<String> getUserGroups(String user) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    public List<GrantedAuthority> getUserRoles(String user) {
+        ArrayList<GrantedAuthority> roles = new ArrayList();
+        roles.add(new SimpleGrantedAuthority(AuthorityRoles.USER.getAuthority()));
+        roles.add(new SimpleGrantedAuthority(AuthorityRoles.ALLOW_ENCODING.getAuthority()));
+        roles.add(new SimpleGrantedAuthority(AuthorityRoles.ADMIN.getAuthority()));
+        return roles;
     }
 
     @PostConstruct

@@ -1,6 +1,7 @@
 package com.github.segator.proxylive.service;
 
 import com.github.segator.proxylive.config.ProxyLiveConfiguration;
+import com.github.segator.proxylive.entity.EPGProgram;
 import com.github.segator.proxylive.tasks.HLSDirectTask;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
@@ -18,8 +19,10 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Date;
+import java.util.List;
 import java.util.zip.GZIPInputStream;
 
 @Service
@@ -83,5 +86,10 @@ public class EPGService {
         connection.setRequestMethod("GET");
         connection.connect();
         return connection;
+    }
+
+    public List<EPGProgram> getEPGFromChannelID(String epgID) {
+        List<EPGProgram> epgPrograms = new ArrayList<>();
+        return epgPrograms;
     }
 }

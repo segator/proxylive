@@ -7,14 +7,15 @@ package com.github.segator.proxylive.service;
 
 import com.github.segator.proxylive.config.PlexAuthentication;
 import com.github.segator.proxylive.config.ProxyLiveConfiguration;
+import com.github.segator.proxylive.helper.AuthorityRoles;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Service;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -50,7 +51,7 @@ public class PlexAuthenticationService implements AuthenticationService {
     }
 
     @Override
-    public boolean loginUser(String user, String password) throws MalformedURLException, IOException, ParseException {
+    public boolean loginUser(String user, String password) throws  IOException, ParseException {
         if(user!=null && allowedUsers.contains(user.toLowerCase())){
             //Check user pass is valid
             return getUserData(user, password)!=null;
@@ -90,10 +91,16 @@ public class PlexAuthenticationService implements AuthenticationService {
     }
 
     @Override
-    public List<String> getUserGroups(String user) {
-        ArrayList<String> userGroups = new ArrayList();
-        userGroups.add("all");
-        return userGroups;
+    public List<GrantedAuthority> getUserRoles(String user) {
+        ArrayList<GrantedAuthority> roles = new ArrayList();
+        if(allowedUsers.contains(user)){
+            roles.add(new SimpleGrantedAuthority(AuthorityRoles.USER.getAuthority()));
+            roles.add(new SimpleGrantedAuthority(AuthorityRoles.ALLOW_ENCODING.getAuthority()));
+        }
+        if(user.equalsIgnoreCase(configuration.getAuthentication().getPlex().getAdminUser())){
+            roles.add(new SimpleGrantedAuthority(AuthorityRoles.ADMIN.getAuthority()));
+        }
+        return roles;
     }
 
     private JSONObject getUserData(String user, String pass) throws MalformedURLException, IOException, ParseException {

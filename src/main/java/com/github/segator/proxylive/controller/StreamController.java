@@ -26,32 +26,17 @@ package com.github.segator.proxylive.controller;
 import com.github.segator.proxylive.ProxyLiveConstants;
 import com.github.segator.proxylive.ProxyLiveUtils;
 import com.github.segator.proxylive.config.FFMpegProfile;
-import com.github.segator.proxylive.entity.AuthToken;
+import com.github.segator.proxylive.config.ProxyLiveConfiguration;
 import com.github.segator.proxylive.entity.Channel;
 import com.github.segator.proxylive.entity.ClientInfo;
 import com.github.segator.proxylive.processor.DirectHLSTranscoderStreamProcessor;
+import com.github.segator.proxylive.processor.IHLSStreamProcessor;
 import com.github.segator.proxylive.processor.IStreamMultiplexerProcessor;
 import com.github.segator.proxylive.profiler.FFmpegProfilerService;
 import com.github.segator.proxylive.service.ChannelService;
 import com.github.segator.proxylive.service.EPGService;
-import com.github.segator.proxylive.service.TokensService;
 import com.github.segator.proxylive.tasks.StreamProcessorsSession;
-
-import java.io.*;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import com.github.segator.proxylive.config.ProxyLiveConfiguration;
-import com.github.segator.proxylive.processor.IHLSStreamProcessor;
-import com.github.segator.proxylive.service.AuthenticationService;
-
-import java.net.*;
-import java.util.*;
-import java.util.regex.Pattern;
-
 import org.apache.commons.io.IOUtils;
-
-
-import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
@@ -61,13 +46,19 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
-import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.util.UriComponentsBuilder;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.*;
+import java.net.URISyntaxException;
+import java.util.*;
+import java.util.regex.Pattern;
 
 /**
  *
@@ -80,72 +71,24 @@ public class StreamController {
 
     private final ApplicationContext context;
     private final ProxyLiveConfiguration config;
-    private final AuthenticationService authService;
     private final ChannelService channelService;
     private final EPGService epgService;
     private final FFmpegProfilerService ffmpegProfileService;
-    private final TokensService tokenService;
     private final StreamProcessorsSession streamProcessorsSession;
 
-    public StreamController(ApplicationContext context, ProxyLiveConfiguration config, AuthenticationService authService, ChannelService channelService, EPGService epgService, FFmpegProfilerService ffmpegProfileService, TokensService tokenService, StreamProcessorsSession streamProcessorsSession) {
+    public StreamController(ApplicationContext context, ProxyLiveConfiguration config, ChannelService channelService, EPGService epgService, FFmpegProfilerService ffmpegProfileService,  StreamProcessorsSession streamProcessorsSession) {
         this.context = context;
         this.config = config;
-        this.authService = authService;
         this.channelService = channelService;
         this.epgService = epgService;
         this.ffmpegProfileService = ffmpegProfileService;
-        this.tokenService = tokenService;
         this.streamProcessorsSession = streamProcessorsSession;
-    }
-
-
-    private boolean authenticate(HttpServletRequest request) throws Exception {
-        MultiValueMap<String, String> parameters = UriComponentsBuilder.fromUriString(ProxyLiveUtils.getURL(request)).build().getQueryParams();
-
-        String token = parameters.getFirst("token");
-        String username = parameters.getFirst("user");
-        if(token!=null){
-            return validateToken(token);
-        }else{
-            return validateUser(username,parameters.getFirst("pass"));
-        }
-    }
-
-    private boolean validateUser(String username, String pass) throws Exception {
-        Boolean userLoggedResult = streamProcessorsSession.isUserLogged(username);
-        if(userLoggedResult==null) {
-            if (!authService.loginUser(username, pass)) {
-                streamProcessorsSession.addCacheClient(username,false);
-                userLoggedResult=false;
-            } else {
-                streamProcessorsSession.addCacheClient(username,true);
-                userLoggedResult=true;
-            }
-        }
-        return userLoggedResult;
-    }
-
-    private boolean validateToken(String token) {
-        AuthToken authToken = tokenService.getTokenByID(token);
-        if(authToken==null){
-            return false;
-        }
-
-        if(authToken.getExpirationDate()!=null){
-            return authToken.getExpirationDate().getTime()>new Date().getTime();
-        }else{
-            return true;
-        }
     }
 
     @RequestMapping(value = "/view/{profile}/{channelID}",method=RequestMethod.GET)
     public void dispatchStream(@PathVariable("profile") String profile, @PathVariable("channelID") String channelID,
-            HttpServletRequest request, HttpServletResponse response) throws Exception {
+            HttpServletRequest request, HttpServletResponse response,Authentication authentication) throws Exception {
 
-        if(!authenticate(request)){
-            response.setStatus(HttpStatus.UNAUTHORIZED.value());
-            return;
-        }
         if(channelID.contains("?")){
             channelID=channelID.split(Pattern.quote("?"))[0];
         }
@@ -156,7 +99,7 @@ public class StreamController {
             return;
         }
         IStreamMultiplexerProcessor iStreamProcessor = (IStreamMultiplexerProcessor) context.getBean("StreamProcessor", ProxyLiveConstants.STREAM_MODE, channel.getName(), channel, profile);
-        ClientInfo client = streamProcessorsSession.manage(iStreamProcessor, request);
+        ClientInfo client = streamProcessorsSession.manage(iStreamProcessor, request,authentication.getPrincipal().toString());
 
         logger.debug("Open Stream " + channelID + " by " + client.getClientUser());
         iStreamProcessor.start();
@@ -258,13 +201,7 @@ public class StreamController {
 
     @RequestMapping(value = "channel/list/{format:^mpeg|hls$}/{profile}", method = RequestMethod.GET)
     public @ResponseBody
-    String generatePlaylist(HttpServletRequest request, HttpServletResponse response, @PathVariable("profile") String profile, @PathVariable("format") String format) throws MalformedURLException, ProtocolException, IOException, ParseException, Exception {
-        MultiValueMap<String, String> parameters = UriComponentsBuilder.fromUriString(ProxyLiveUtils.getURL(request)).build().getQueryParams();
-        if(!authenticate(request)){
-            response.setStatus(HttpStatus.UNAUTHORIZED.value());
-            return "invalid user";
-        }
-
+    String generatePlaylist(HttpServletRequest request, HttpServletResponse response, @PathVariable("profile") String profile, @PathVariable("format") String format, Authentication authentication) throws Exception {
         FFMpegProfile ffmpegProfile = ffmpegProfileService.getProfile(profile);
         if(ffmpegProfile==null && !"raw".equals(profile)){
             response.setStatus(404);
@@ -306,7 +243,7 @@ public class StreamController {
             if(format.equals("hls")){
                 channelURL=channelURL+"/playlist.m3u8";
             }
-            channelURL=String.format("%s?user=%s&pass=%s",channelURL,parameters.getFirst("user"),parameters.getFirst("pass"));
+            channelURL=String.format("%s?token=%s",channelURL,authentication.getCredentials());
 
             buffer.append(String.format("#EXTINF:-1 tvg-chno=\"%d\" %s %s %s tvg-name=\"%s\" type=\"%s\",%s\r\n%s\r\n",
                     channel.getNumber(),logoURL,categoriesString,epgIDString,channel.getName(),format,channel.getName(),channelURL));
@@ -341,14 +278,9 @@ public class StreamController {
 
     @RequestMapping(value = "/view/{profile}/{channelID}/{file:^(?i)playlist.m3u8|dummy\\d*.ts|playlist\\d*.ts$}", method = RequestMethod.GET)
     public void dispatchHLS(@PathVariable("profile") String profile, @PathVariable("channelID") String channelID,
-            @PathVariable String file, HttpServletRequest request, HttpServletResponse response) throws Exception {
+            @PathVariable String file, HttpServletRequest request, HttpServletResponse response,Authentication authentication) throws Exception {
         long now = new Date().getTime();
-        if(file.equals("playlist.m3u8")) {
-            if (!authenticate(request)) {
-                response.setStatus(HttpStatus.UNAUTHORIZED.value());
-                return;
-            }
-        }
+
         if(!config.getFfmpeg().getHls().getEnabled()){
             response.setStatus(404);
             return;
@@ -372,7 +304,7 @@ public class StreamController {
             hlsStreamProcessor = (DirectHLSTranscoderStreamProcessor) context.getBean("StreamProcessor", ProxyLiveConstants.HLS_MODE, clientIdentifier, channel, profile);
             hlsStreamProcessor.start();
         }
-        ClientInfo client = streamProcessorsSession.manage(hlsStreamProcessor, request);
+        ClientInfo client = streamProcessorsSession.manage(hlsStreamProcessor, request,authentication.getPrincipal().toString());
         //if (hlsStreamProcessor.isConnected()) {
             file = file.toLowerCase();
             logger.debug("Client require:" + file + " after " + (new Date().getTime() - now)/1000);

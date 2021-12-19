@@ -40,7 +40,6 @@ public class ChannelURLService implements ChannelService {
     private ProxyLiveConfiguration config;
 
     private List<Channel> channels;
-    //private File tmpGitPath;
     private Git git;
     private File tempLogoFilePath;
     private long lastUpdate=0;
@@ -86,18 +85,13 @@ public class ChannelURLService implements ChannelService {
             }else if(config.getSource().getChannels().getGit()!=null){
                 //not initialized yet
                 if(git==null){
-                    logger.info("Loading Channels from: "+config.getSource().getChannels().getGit().getRepository());
+                    logger.info("Loading Channels from: {} branch {} ",config.getSource().getChannels().getGit().getRepository(),config.getSource().getChannels().getGit().getBranch());
                     File tmpGitPath = Files.createTempDirectory("proxyliveGit").toFile();
                     GitSource gitSource = config.getSource().getChannels().getGit();
                     CloneCommand cloneCommand = Git.cloneRepository();
                     cloneCommand.setURI(gitSource.getRepository());
                     cloneCommand.setDirectory(tmpGitPath);
-                    cloneCommand.setCloneAllBranches(true);
-                    //cloneCommand.setBranch(gitSource.getBranch());
-                    //List<String> branches = new ArrayList<String>();
-                    //branches.add("refs/heads/"+gitSource.getBranch());
-                    //cloneCommand.setBranchesToClone(branches);
-                    //cloneCommand.setBranch("refs/heads/"+gitSource.getBranch());
+                    cloneCommand.setBranch(config.getSource().getChannels().getGit().getBranch());
                     setGitCredentials(cloneCommand);
                     git = cloneCommand.call();
                     PullCommand pull = git.pull();

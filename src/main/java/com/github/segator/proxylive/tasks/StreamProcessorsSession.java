@@ -59,44 +59,10 @@ public class StreamProcessorsSession {
     private GeoIPService geoIPService;
 
     private final List<ClientInfo> clientInfoList;
-    private final Map<String, Long> cacheClientsLogged;
-    private final Map<String, Long> cacheClientsFailed;
+
 
     public StreamProcessorsSession() {
-        cacheClientsLogged = new HashMap();
-        cacheClientsFailed = new HashMap();
         clientInfoList = new ArrayList();
-    }
-
-    public  void addCacheClient(String user,boolean logged) {
-        synchronized (this) {
-            if (logged) {
-                cacheClientsLogged.put(user, new Date().getTime() + 86400000); //24h cache
-            } else {
-                cacheClientsFailed.put(user, new Date().getTime() + 15000); //15s cache
-            }
-        }
-    }
-
-    public Boolean isUserLogged(String user){
-        boolean logged=false;
-       Long expireTime = cacheClientsLogged.get(user);
-       if(expireTime==null){
-           expireTime = cacheClientsFailed.get(user);
-           if(expireTime==null){
-               return null;
-           }else if(new Date().getTime() > expireTime){
-               return null;
-           }else{
-               return false;
-           }
-       }else{
-           if(new Date().getTime() > expireTime){
-               return null;
-           }else{
-               return true;
-           }
-       }
     }
 
     public synchronized ClientInfo addClientInfo(ClientInfo client) {
@@ -116,11 +82,10 @@ public class StreamProcessorsSession {
         return clientInfoList;
     }
 
-    public synchronized ClientInfo manage(IStreamProcessor iStreamProcessor, HttpServletRequest request) throws UnknownHostException {
+    public synchronized ClientInfo manage(IStreamProcessor iStreamProcessor, HttpServletRequest request,String clientUser) throws UnknownHostException {
         ClientInfo client = new ClientInfo();
         request.getQueryString();
-        MultiValueMap<String, String> parameters = UriComponentsBuilder.fromUriString(ProxyLiveUtils.getURL(request)).build().getQueryParams();
-        String clientUser = parameters.getFirst("user");
+
         if (clientUser == null || clientUser.trim().equals("null")) {
             clientUser = "guest";
         }
