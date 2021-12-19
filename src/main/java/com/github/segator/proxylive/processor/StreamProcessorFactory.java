@@ -24,10 +24,17 @@
 package com.github.segator.proxylive.processor;
 
 import com.github.segator.proxylive.ProxyLiveConstants;
+
+import java.rmi.Remote;
 import java.util.Base64;
 import java.util.Date;
+import java.util.List;
 
+import com.github.segator.proxylive.config.FFMpegProfile;
+import com.github.segator.proxylive.config.RemoteTranscoder;
 import com.github.segator.proxylive.entity.Channel;
+import com.github.segator.proxylive.entity.ChannelSource;
+import com.github.segator.proxylive.profiler.FFmpegProfilerService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
@@ -41,8 +48,13 @@ import org.springframework.context.annotation.Scope;
 @Configuration
 public class StreamProcessorFactory {
 
-    @Autowired
-    private ApplicationContext context;
+    private final ApplicationContext context;
+    private final FFmpegProfilerService ffmpegProfileService;
+
+    public StreamProcessorFactory(ApplicationContext context, FFmpegProfilerService ffmpegProfileService) {
+        this.context = context;
+        this.ffmpegProfileService = ffmpegProfileService;
+    }
 
     @Bean
     @Scope(value = "prototype")
@@ -53,10 +65,20 @@ public class StreamProcessorFactory {
                 streamProcessor = (IStreamProcessor) context.getBean("DirectHLSTranscoderStreamProcessor",  channel, profile);
                 break;
             case ProxyLiveConstants.STREAM_MODE:
-                if (profile==null || profile.equals("raw")) {
-                    streamProcessor = (HttpSoureStreamProcessor) context.getBean("HttpSoureStreamProcessor",  channel);
-                }else{
-                    streamProcessor = (IStreamProcessor) context.getBean("DirectTranscodedStreamProcessor", channel, profile);
+                if(profile!=null && !profile.equals("raw")){
+                    FFMpegProfile ffmpegProfile = ffmpegProfileService.getProfile(profile);
+                    if(ffmpegProfile.isLocalTranscoding()) {
+                        streamProcessor = (IStreamProcessor) context.getBean("DirectTranscodedStreamProcessor", channel, profile);
+                        break;
+                    }else{
+                        RemoteTranscoder remoteTranscoder = RemoteTranscoder.CreateFrom(ffmpegProfile.getTranscoder());
+                        if(remoteTranscoder.getProfile()==null){
+                            remoteTranscoder.setProfile(profile);
+                        }
+                        streamProcessor = (IStreamProcessor) context.getBean("RemoteTranscodeStreamProcessor", channel.getId(), remoteTranscoder);
+                    }
+                }else {
+                    streamProcessor = (HttpSoureStreamProcessor) context.getBean("HttpSoureStreamProcessor", channel);
                 }
                 break;
         }
@@ -74,6 +96,11 @@ public class StreamProcessorFactory {
     @Scope(value = "prototype")
     public IStreamProcessor DirectTranscodedStreamProcessor(Channel channel, String profile) {
         return new DirectTranscoderStreamProcessor(channel, profile);
+    }
+    @Bean
+    @Scope(value = "prototype")
+    public IStreamProcessor RemoteTranscodeStreamProcessor(String channelID, RemoteTranscoder transcoder) {
+        return new RemoteTranscodeStreamProcessor(channelID, transcoder);
     }
 
     @Bean

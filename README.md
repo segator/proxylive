@@ -149,6 +149,12 @@ ffmpeg:
     profiles:
         -
             alias: "aac"
+            #transcoder:
+              #if defined all the transcoding operations will be handled by this remote proxylive server
+              #in this case is mandatory  define the same authentication.secret on both servers.
+              #endpoint: http://myremoteproxylive.com
+              #if defined will be use this profile on the remote server, if not the alias value.              
+              #profile: myremoteprofile
             #FFmpeg parameters, check ffmpeg documentation for more info
             parameters: "-i {input} {channelParameters} -sn -ac 2 -c:a aac -b:a 320k -c:v copy"
         -

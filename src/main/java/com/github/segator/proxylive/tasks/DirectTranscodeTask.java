@@ -7,28 +7,23 @@ package com.github.segator.proxylive.tasks;
 
 import com.github.segator.proxylive.config.ProxyLiveConfiguration;
 import com.github.segator.proxylive.entity.Channel;
-import com.github.segator.proxylive.processor.IStreamMultiplexerProcessor;
 import com.github.segator.proxylive.processor.IStreamProcessor;
 import com.github.segator.proxylive.profiler.FFmpegProfilerService;
 import com.github.segator.proxylive.service.TokenService;
 import com.github.segator.proxylive.stream.BroadcastCircularBufferedOutputStream;
-import com.github.segator.proxylive.stream.WebInputStream;
 import com.github.segator.proxylive.stream.WithoutBlockingInputStream;
-
-import java.io.*;
-import java.net.URL;
-import java.util.Date;
-import java.util.Objects;
-
-import java.util.regex.Pattern;
-import javax.annotation.PostConstruct;
-
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.env.Environment;
+
+import javax.annotation.PostConstruct;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.Date;
+import java.util.Objects;
 
 /**
  *

@@ -46,6 +46,7 @@ public class ProcessorTasks {
     private final Map<Thread, IStreamTask> httpSourceStreamTasks;
     private final Map<Thread, IStreamTask> transcodeTasks;
     private final Map<Thread, IStreamTask> directTranscodeTasks;
+    private final Map<Thread, IStreamTask> remoteTranscodeTasks;
     private final Map<Thread, IStreamTask> HLSTasks;
     private final Map<Thread, IStreamTask> HLSDirectTasks;
 
@@ -54,14 +55,13 @@ public class ProcessorTasks {
     @Autowired
     private ProxyLiveConfiguration config;
 
-
-
     public ProcessorTasks() {
         httpSourceStreamTasks = new HashMap();
         transcodeTasks = new HashMap();
         directTranscodeTasks = new HashMap();
         HLSTasks = new HashMap();
         HLSDirectTasks = new HashMap();
+        remoteTranscodeTasks = new HashMap();
     }
 
     public synchronized void runTask(IStreamTask task) throws Exception {
@@ -108,6 +108,8 @@ public class ProcessorTasks {
             return directTranscodeTasks;
         } else if (clazz.equals(HLSDirectTask.class)) {
             return HLSDirectTasks;
+        } else if (clazz.equals(RemoteTranscodeTask.class)){
+            return remoteTranscodeTasks;
         }
         return null;
     }
@@ -119,6 +121,7 @@ public class ProcessorTasks {
         allMaps.putAll(directTranscodeTasks);
         allMaps.putAll(HLSTasks);
         allMaps.putAll(HLSDirectTasks);
+        allMaps.putAll(remoteTranscodeTasks);
         return allMaps;
     }
 

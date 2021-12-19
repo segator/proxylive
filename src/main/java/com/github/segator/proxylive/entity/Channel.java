@@ -2,6 +2,7 @@ package com.github.segator.proxylive.entity;
 
 import java.io.File;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -16,6 +17,22 @@ public class Channel {
     private List<String> categories;
     private List<ChannelSource> sources;
     private String ffmpegParameters="";
+    public Channel(){
+
+    }
+    public static Channel createFromChannel(Channel source){
+        Channel channel = new Channel();
+        channel.setId(source.getId());
+        channel.setCategories(new ArrayList<>(source.getCategories()));
+        channel.setEpgID(source.getEpgID());
+        channel.setFfmpegParameters(source.getFfmpegParameters());
+        channel.setName(source.getName());
+        channel.setLogoFile(source.getLogoFile());
+        channel.setNumber(source.getNumber());
+        channel.setSources(new ArrayList<>(source.getSources()));
+        channel.setLogoURL(source.getLogoURL());
+        return channel;
+    }
 
 
     public Integer getNumber() {

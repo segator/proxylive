@@ -24,32 +24,35 @@
 package com.github.segator.proxylive.tasks;
 
 import com.github.segator.proxylive.ProxyLiveUtils;
-import com.github.segator.proxylive.entity.Channel;
+import com.github.segator.proxylive.config.FFMpegProfile;
+import com.github.segator.proxylive.config.ProxyLiveConfiguration;
+import com.github.segator.proxylive.config.RemoteTranscoder;
 import com.github.segator.proxylive.entity.ChannelSource;
 import com.github.segator.proxylive.processor.IStreamProcessor;
+import com.github.segator.proxylive.service.TokenService;
 import com.github.segator.proxylive.stream.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
 
+import javax.annotation.PostConstruct;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Date;
 import java.util.Objects;
-import javax.annotation.PostConstruct;
-import com.github.segator.proxylive.config.ProxyLiveConfiguration;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
 
 /**
  *
  * @author Isaac Aymerich <isaac.aymerich@gmail.com>
  */
-public class HttpDownloaderTask implements IMultiplexerStreamer {
-    private final Logger logger = LoggerFactory.getLogger(HttpDownloaderTask.class);
-    private String url;
-    private final Channel channel;
+public class RemoteTranscodeTask implements IMultiplexerStreamer {
+    private final Logger logger = LoggerFactory.getLogger(RemoteTranscodeTask.class);
+    private final RemoteTranscoder transcoder;
+
+    private final String channelID;
     private Date runDate;
     private VideoInputStream videoInputStream;
     private BroadcastCircularBufferedOutputStream multiplexerOutputStream;
@@ -58,24 +61,19 @@ public class HttpDownloaderTask implements IMultiplexerStreamer {
     private int crashTimes = 0;
     private Long now;
     private byte[] buffer;
-    private int sourcePriority;
-    ChannelSource channelSource;
+
     @Autowired
-    private ApplicationContext context;
+    private TokenService tokenService;
     @Autowired
     private ProxyLiveConfiguration config;
 
-    public HttpDownloaderTask(Channel channel) throws MalformedURLException, IOException {
-        this.channel = channel;
-
-
+    public RemoteTranscodeTask(String channelID,RemoteTranscoder transcoder) {
+        this.transcoder = transcoder;
+        this.channelID = channelID;
     }
 
     @PostConstruct
     public void initializeBean() throws Exception {
-        sourcePriority=1;
-        channelSource =  channel.getSourceByPriority(sourcePriority);
-        url = channelSource.getUrl();
         buffer = new byte[config.getBuffers().getChunkSize()];
         multiplexerOutputStream = new BroadcastCircularBufferedOutputStream(config.getBuffers().getBroadcastBufferSize());
     }
@@ -85,13 +83,13 @@ public class HttpDownloaderTask implements IMultiplexerStreamer {
 
     }
 
-    public synchronized String getUrl() {
-        return url;
-    }
-
     @Override
     public void terminate() {
         terminate = true;
+    }
+
+    public boolean isTerminated() {
+        return terminate;
     }
 
     @Override
@@ -101,11 +99,16 @@ public class HttpDownloaderTask implements IMultiplexerStreamer {
 
     @Override
     public String getSource() {
-        return url;
+        return String.format("%s/view/%s/%s",transcoder.getEndpoint(), transcoder.getProfile(),channelID);
+    }
+    public String getAuthenticatedURL(){
+        String token = tokenService.createServiceAccountRequestToken(String.format("RemoteTranscode-%s",getIdentifier()));
+        return String.format("%s?&token=%s",getSource(),token);
     }
 
+
     private String getStringIdentifier(String message){
-        return "[id:" + getIdentifier() + ",priority:"+sourcePriority+"] " + message + " -- " + url;
+        return "[id:" + getIdentifier() +"] " + message;
     }
     @Override
     public void run() {
@@ -113,18 +116,8 @@ public class HttpDownloaderTask implements IMultiplexerStreamer {
         int len;
         try {
             now = new Date().getTime();
-            url= urlTagsReplace(url);
-            if(requiresFFmpegStream(channelSource)) {
-                videoInputStream = new FFmpegInputStream(ProxyLiveUtils.replaceSchemes(url), channel, config);
-            }else if(url.startsWith("pipe")){
-                videoInputStream = new ProcessInputStream(url.replaceAll("pipe://",""));
-            }else if(url.startsWith("http")){
-                videoInputStream = new WebInputStream(new URL(url),config);
-            }else if(url.startsWith("udp")){
-                videoInputStream = new UDPInputStream(url,config);
-            }else{
-                throw new Exception("unkown format url" + url);
-            }
+            videoInputStream = new WebInputStream(new URL(getAuthenticatedURL()),config);
+
             logger.debug(getStringIdentifier("Get Stream"));
             if (videoInputStream.connect()) {
                 long lastReaded  = new Date().getTime();
@@ -150,15 +143,6 @@ public class HttpDownloaderTask implements IMultiplexerStreamer {
                 terminate = true;
             } else {
                 closeWebStream();
-                //If exist more sources try another
-                sourcePriority++;
-                channelSource = channel.getSourceByPriority(sourcePriority);
-                if(channelSource==null){
-                    crashTimes++;
-                    sourcePriority=1;
-                    channelSource = channel.getSourceByPriority(sourcePriority);
-                }
-                url = channelSource.getUrl();
                 run();
             }
         } finally {
@@ -171,67 +155,32 @@ public class HttpDownloaderTask implements IMultiplexerStreamer {
         }
     }
 
-    private String urlTagsReplace(String url) {
-        return url.replaceAll("\\{\\{now\\}\\}",now.toString()).
-                   replaceAll("\\{\\{channel\\}\\}",channel.getName()).
-                   replaceAll("\\{\\{user-agent\\}\\}",config.getUserAgent()).
-                   replaceAll("\\{\\{timeout\\}\\}",config.getSource().getReconnectTimeout()+"").
-                   replaceAll("\\{\\{ffmpegParameters\\}\\}",(channel.getFfmpegParameters()!=null?channel.getFfmpegParameters():""));
-    }
-
-    private boolean requiresFFmpegStream(ChannelSource channelSource) {
-        return channelSource.getType().equals("ffmpeg") || url.startsWith("hls") || url.startsWith("dash") || url.startsWith("rtmp") || url.startsWith("rtsp");
-    }
 
     private void closeWebStream() {
         try {
             videoInputStream.close();
         }catch(Exception ex) {
         }
-        try{
-            if(channelSource.getCloseHook()!=null){
-                String urlHook=urlTagsReplace(channelSource.getCloseHook());
-                logger.debug(getStringIdentifier("Close WebHook:"+urlHook));
-                if(url.startsWith("pipe")){
-                    Runtime.getRuntime().exec(ProxyLiveUtils.translateCommandline(urlHook.replaceAll("pipe://",""))).waitFor();
-                }else if(url.startsWith("http")) {
-                    HttpURLConnection connection = (HttpURLConnection) new URL(urlHook).openConnection();
-                    connection.connect();
-                }
-            }
-        } catch (Exception ex) {
-        }
     }
 
     @Override
     public int hashCode() {
         int hash = 7;
-        hash = 89 * hash + Objects.hashCode(this.channel.getId());
+        hash = 89 * hash + Objects.hashCode(getIdentifier());
         return hash;
     }
 
-    public boolean isTerminated() {
-        return terminate;
-    }
-
     @Override
-    public boolean equals(Object obj) {
-        if (obj == null) {
-            return false;
-        }
-        if (getClass() != obj.getClass()) {
-            return false;
-        }
-        final HttpDownloaderTask other = (HttpDownloaderTask) obj;
-        if (!Objects.equals(this.channel.getId(), other.channel.getId())) {
-            return false;
-        }
-        return true;
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        RemoteTranscodeTask that = (RemoteTranscodeTask) o;
+        return transcoder.equals(that.transcoder) && channelID.equals(that.channelID);
     }
 
     @Override
     public String getIdentifier() {
-        return channel.getId();
+        return channelID+"_"+transcoder.getEndpoint()+"_"+transcoder.getProfile();
     }
 
     @Override

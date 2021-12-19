@@ -23,6 +23,7 @@
  */
 package com.github.segator.proxylive.tasks;
 
+import com.github.segator.proxylive.config.RemoteTranscoder;
 import com.github.segator.proxylive.entity.Channel;
 import com.github.segator.proxylive.processor.IStreamMultiplexerProcessor;
 import java.io.IOException;
@@ -47,7 +48,12 @@ public class StreamTaskFactory {
     @Scope(value = "prototype")
     public DirectTranscodeTask DirectTranscodeTask(Channel channel, String profile) throws IOException {
         return new DirectTranscodeTask(channel,profile);
+    }
 
+    @Bean
+    @Scope(value = "prototype")
+    public RemoteTranscodeTask RemoteTranscodeTask(String channelID, RemoteTranscoder transcoder) throws IOException {
+        return new RemoteTranscodeTask(channelID,transcoder);
     }
 
     @Bean

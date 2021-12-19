@@ -23,12 +23,15 @@
  */
 package com.github.segator.proxylive.config;
 
+import java.rmi.Remote;
+
 /**
  *
  * @author Isaac Aymerich <isaac.aymerich@gmail.com>
  */
 public class FFMpegProfile {
     private String alias;
+    private RemoteTranscoder transcoder;
     private String parameters;
     private Integer adaptiveBandWith;
     private String adaptiveResolution;
@@ -64,5 +67,18 @@ public class FFMpegProfile {
     public void setParameters(String parameters) {
         this.parameters = parameters;
     }
-    
+
+    public boolean isLocalTranscoding(){
+        return transcoder==null;
+    }
+
+    public RemoteTranscoder getTranscoder() {
+        return transcoder;
+    }
+
+    public void setTranscoder(RemoteTranscoder transcoder) {
+        this.transcoder = transcoder;
+    }
+
+
 }
