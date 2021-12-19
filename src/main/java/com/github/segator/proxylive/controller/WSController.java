@@ -120,7 +120,7 @@ public class WSController {
     }
 
 
-    @RequestMapping(value = "/ws/token/", produces = "application/json",method = RequestMethod.POST)
+    @RequestMapping(value = "/ws/token", produces = "application/json",method = RequestMethod.POST)
     public @ResponseBody LoginResult  addToken(@RequestParam("tokenName") String serviceAccountName,@RequestParam("expireHours") Integer expireHours) {
         List<GrantedAuthority> grantedAuthorities = AuthorityUtils
                 .createAuthorityList(
