@@ -55,3 +55,6 @@ ffmpeg:
 buffers:
     chunkSize: 131072
     broadcastBufferSize: 52428800
+
+authentication:
+    expireInHours: 48
