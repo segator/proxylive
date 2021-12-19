@@ -25,15 +25,19 @@ package com.github.segator.proxylive.controller;
 
 import com.github.segator.proxylive.ProxyLiveUtils;
 import com.github.segator.proxylive.entity.*;
+import com.github.segator.proxylive.helper.AuthorityRoles;
+import com.github.segator.proxylive.helper.JwtHelper;
 import com.github.segator.proxylive.processor.IStreamProcessor;
-import com.github.segator.proxylive.service.TokensService;
 import com.github.segator.proxylive.tasks.IStreamTask;
 import com.github.segator.proxylive.tasks.ProcessorTasks;
 import com.github.segator.proxylive.tasks.StreamProcessorsSession;
 import java.io.IOException;
+import java.time.Instant;
 import java.util.*;
 import java.util.Map.Entry;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
@@ -43,17 +47,16 @@ import org.springframework.web.bind.annotation.*;
  */
 @Controller
 public class WSController {
-
+    private final JwtHelper jwtHelper;
     private final ProcessorTasks tasksProcessor;
     private final StreamProcessorsSession streamProcessorsSession;
-    private final TokensService tokenService;
 
 
 
     @Autowired
-    public WSController(StreamProcessorsSession streamProcessorsSession, TokensService tokenService,ProcessorTasks tasksProcessor) {
+    public WSController(JwtHelper jwtHelper, StreamProcessorsSession streamProcessorsSession, ProcessorTasks tasksProcessor) {
+        this.jwtHelper = jwtHelper;
         this.streamProcessorsSession = streamProcessorsSession;
-        this.tokenService = tokenService;
         this.tasksProcessor = tasksProcessor;
     }
 
@@ -116,37 +119,20 @@ public class WSController {
         }
     }
 
-    @RequestMapping(value = "/ws/token", produces = "application/json",method = RequestMethod.GET)
-    public @ResponseBody
-    List<AuthToken> getTokenList() throws IOException {
-        return tokenService.getAllTokens();
-    }
 
-    @RequestMapping(value = "/ws/token/{tokenID}", produces = "application/json",method = RequestMethod.DELETE)
-    public @ResponseBody void  deleteToken(@PathVariable("tokenID") String tokenID) throws IOException {
-        tokenService.deleteTokenByID(tokenID);
-    }
+    @RequestMapping(value = "/ws/token/", produces = "application/json",method = RequestMethod.POST)
+    public @ResponseBody LoginResult  addToken(@RequestParam("tokenName") String serviceAccountName,@RequestParam("expireHours") Integer expireHours) {
+        List<GrantedAuthority> grantedAuthorities = AuthorityUtils
+                .createAuthorityList(
+                        AuthorityRoles.USER.getAuthority(),
+                        AuthorityRoles.ALLOW_ENCODING.getAuthority()
+                );
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTimeInMillis(Instant.now().toEpochMilli());
+        calendar.add(Calendar.HOUR, expireHours);
+        String jwtToken = jwtHelper.createJwtForClaims(serviceAccountName,grantedAuthorities,calendar.getTime());
+        return new LoginResult(serviceAccountName,jwtToken);
 
-    @RequestMapping(value = "/ws/token/", produces = "application/json",method = RequestMethod.PUT)
-    public @ResponseBody void  addToken(@RequestBody Map<String,Object> payload) throws Exception {
-        String expiration = (String)payload.get("expiration");
-        Calendar nowCalendar = Calendar.getInstance();
-        int typeOfAdd=Calendar.DATE;
-        String unitType = expiration.substring(expiration.length()-1,expiration.length()).toLowerCase();
-        switch(unitType){
-            case "d":
-                typeOfAdd = Calendar.DATE;
-                break;
-            case "m":
-                typeOfAdd = Calendar.MONTH;
-                break;
-            case "h":
-                typeOfAdd = Calendar.HOUR_OF_DAY;
-                break;
-        }
-        nowCalendar.add(typeOfAdd,new Integer(expiration.substring(0,expiration.length()-1)));
-
-        tokenService.addTokenByID(new AuthToken((String)payload.get("user"),(String)payload.get("id"),nowCalendar.getTime()));
 
     }
 

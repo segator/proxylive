@@ -10,6 +10,7 @@ import com.github.segator.proxylive.entity.Channel;
 import com.github.segator.proxylive.processor.IStreamMultiplexerProcessor;
 import com.github.segator.proxylive.processor.IStreamProcessor;
 import com.github.segator.proxylive.profiler.FFmpegProfilerService;
+import com.github.segator.proxylive.service.TokenService;
 import com.github.segator.proxylive.stream.BroadcastCircularBufferedOutputStream;
 import com.github.segator.proxylive.stream.WebInputStream;
 import com.github.segator.proxylive.stream.WithoutBlockingInputStream;
@@ -39,12 +40,13 @@ public class DirectTranscodeTask implements IMultiplexerStreamer {
     @Autowired
     private FFmpegProfilerService ffmpegProfilerService;
     @Autowired
+    private TokenService tokenService;
+    @Autowired
     private ProxyLiveConfiguration config;
 
     @Value("${local.server.port}")
     int serverPort;
 
-    private String url;
     private final String profile;
     private final Channel channel;
     private BroadcastCircularBufferedOutputStream multiplexerOutputStream;
@@ -64,15 +66,15 @@ public class DirectTranscodeTask implements IMultiplexerStreamer {
 
     @PostConstruct
     public void initializeBean() {
-        url = "http://localhost:"+serverPort+"/view/raw/" + channel.getId()+"?user=internal&token="+config.getInternalToken();
-        //url = channel.getSourceByPriority(1).getUrl();
         multiplexerOutputStream = new BroadcastCircularBufferedOutputStream(config.getBuffers().getBroadcastBufferSize());
 
     }
 
-    @Override
-    public void initializate() {
+    public String getAuthenticatedURL(){
+        String token = tokenService.createServiceAccountRequestToken(String.format("DirectTranscode-%s",channel.getId()));
+        return String.format("%s?&token=%s",getSource(),token);
     }
+
 
     @Override
     public void terminate() {
@@ -88,7 +90,7 @@ public class DirectTranscodeTask implements IMultiplexerStreamer {
 
     @Override
     public String getSource() {
-        return url;
+        return String.format("http://localhost:%s/view/raw/%s",serverPort,channel.getId());
     }
 
     @Override
@@ -103,7 +105,7 @@ public class DirectTranscodeTask implements IMultiplexerStreamer {
             if (isTerminated()) {
                 return;
             }
-            transcodeParameters = transcodeParameters.replace("{input}",url).replace("{channelParameters}",channel.getFfmpegParameters()!=null?channel.getFfmpegParameters():"");
+            transcodeParameters = transcodeParameters.replace("{input}",getAuthenticatedURL()).replace("{channelParameters}",channel.getFfmpegParameters()!=null?channel.getFfmpegParameters():"");
             String ffmpegCommand = ffmpegExecutable + " " + transcodeParameters + " " + ffmpegMpegTSParameters+" -";
             logger.debug("[" + getIdentifier() + "] Transcoding Command: " + ffmpegCommand);
             process = Runtime.getRuntime().exec(ffmpegCommand);
@@ -209,6 +211,10 @@ public class DirectTranscodeTask implements IMultiplexerStreamer {
     @Override
     public String getIdentifier() {
         return channel.getId() + "_" + profile;
+    }
+
+    @Override
+    public void initializate() throws Exception {
     }
 
     @Override

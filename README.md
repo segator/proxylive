@@ -188,10 +188,13 @@ buffers:
     
 ### Authentication
 ```
-You can use plex authentication or ldap, adding this in the application.yaml
+You can use plex authentication ldap or without(default) adding this in the application.yaml
 all your plex friends that have the option "allow channels" will have access to stream from proxylive
 ```yaml
 authentication:
+    secret: xxxxxxxxx # 512 bits Secret, if not defined will generated randomly per each start
+    # recomended use persistent secret or tokens will be invalid in case of restart
+    expireInHours: 48 # JWT expire time in hours
     #For plex auth
     plex:
         #every refresh time in seconds we will fetch users that are allowed to login
@@ -209,11 +212,17 @@ authentication:
 ```
 
 
-Client users will connect attaching to the URL  ?user=user&pass=pass
+Client users will connect attaching to the URL  ?user=user&pass=pass or ?token=xxx
 ```
 http://localhost:8080/channel/list/mpeg/1080p?user=myplexuser&pass=myplexpass
 ```
-
+In case of using token can be recovered via
+```
+TOKEN=$(curl --location --request POST 'localhost:8080/login' \
+--header 'Content-Type: application/x-www-form-urlencoded' \
+--data-urlencode 'username=xxxxxxx' \
+--data-urlencode 'password=xxxxxx')
+```
 
 ## Url Definition
 you could get a broadcasted stream from
@@ -224,7 +233,7 @@ http://[server]:8080/channel/list/[format]/[profile]
 
 in case of auth enabled
 
-http://[server]:8080/channel/list/[format]/[profile]?user=clientUser&pass=clientPass
+http://[server]:8080/channel/list/[format]/[profile]?token=xxx
 
 ### get EPG
 http://[server]:8080/epg

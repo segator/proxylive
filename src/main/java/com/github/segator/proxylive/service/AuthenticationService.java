@@ -5,6 +5,9 @@
  */
 package com.github.segator.proxylive.service;
 
+import com.github.segator.proxylive.helper.AuthorityRoles;
+import org.springframework.security.core.GrantedAuthority;
+
 import java.util.List;
 
 /**
@@ -14,5 +17,5 @@ import java.util.List;
 
 public interface AuthenticationService {
    public boolean loginUser(String user, String password) throws Exception;
-   public List<String> getUserGroups(String user);
+   public List<GrantedAuthority> getUserRoles(String user);
 }
