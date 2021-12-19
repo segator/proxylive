@@ -1,4 +1,4 @@
-FROM maven:3.6.3-jdk-11-slim as builder
+FROM maven:3.6.3-jdk-14-slim as builder
 WORKDIR /app/code
 COPY / /app/code
 RUN mvn clean install && \
