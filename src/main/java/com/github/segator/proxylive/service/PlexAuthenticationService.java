@@ -93,7 +93,7 @@ public class PlexAuthenticationService implements AuthenticationService {
     @Override
     public List<GrantedAuthority> getUserRoles(String user) {
         ArrayList<GrantedAuthority> roles = new ArrayList();
-        if(allowedUsers.contains(user)){
+        if(allowedUsers.contains(user.toLowerCase())){
             roles.add(new SimpleGrantedAuthority(AuthorityRoles.USER.getAuthority()));
             roles.add(new SimpleGrantedAuthority(AuthorityRoles.ALLOW_ENCODING.getAuthority()));
         }
