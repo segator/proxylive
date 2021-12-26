@@ -103,7 +103,7 @@ public class RemoteTranscodeTask implements IMultiplexerStreamer {
     }
     public String getAuthenticatedURL(){
         String token = tokenService.createServiceAccountRequestToken(String.format("RemoteTranscode-%s",getIdentifier()));
-        return String.format("%s?&token=%s",getSource(),token);
+        return String.format("%s?token=%s",getSource(),token);
     }
 
 
@@ -142,6 +142,7 @@ public class RemoteTranscodeTask implements IMultiplexerStreamer {
                 crashed = true;
                 terminate = true;
             } else {
+                crashTimes++;
                 closeWebStream();
                 run();
             }

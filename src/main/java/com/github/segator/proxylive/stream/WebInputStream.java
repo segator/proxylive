@@ -26,7 +26,6 @@ package com.github.segator.proxylive.stream;
 import com.github.segator.proxylive.config.ProxyLiveConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -34,7 +33,6 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Base64;
-import java.util.Date;
 
 /**
  *
@@ -55,6 +53,7 @@ public class WebInputStream extends VideoInputStream{
 
     private void initializeConnection() throws IOException {
         connection = (HttpURLConnection) url.openConnection();
+        connection.setRequestProperty("Connection","keep-alive");
         connection.setRequestProperty("User-Agent",config.getUserAgent());
         connection.setReadTimeout(config.getSource().getReconnectTimeout()*1000);
         if (url.getUserInfo() != null) {

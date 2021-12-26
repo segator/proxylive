@@ -28,6 +28,7 @@ ENV     LC_ALL en_US.UTF-8
 
 
 ENV DEBUG_MODE false
+ENV PROFILE = ""
 ENV JAVA_OPTS="-Xms256m -Xmx1024m"
 ENV JAVA_HOME /usr/java
 
