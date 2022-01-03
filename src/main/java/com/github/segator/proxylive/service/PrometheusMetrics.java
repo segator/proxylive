@@ -47,7 +47,7 @@ public class PrometheusMetrics implements MeterBinder {
             meterRegistry.remove(meter);
         }
         List<Meter> listOfMetrics=new ArrayList();
-        for (ClientInfo clientInfo: streamProcessorsSession.getClientInfoList()) {
+        for (ClientInfo clientInfo: new ArrayList<>(streamProcessorsSession.getClientInfoList())) {
             List<Tag> tagsClientInfo = new ArrayList();
             tagsClientInfo.add(Tag.of("user",clientInfo.getClientUser()));
             tagsClientInfo.add(Tag.of("ip",clientInfo.getIp().getHostAddress()));
@@ -72,7 +72,7 @@ public class PrometheusMetrics implements MeterBinder {
             }
 
 
-            for (IStreamProcessor stream:   clientInfo.getStreams()) {
+            for (IStreamProcessor stream:   new ArrayList<>(clientInfo.getStreams())) {
                 if(stream.getTask()!=null && stream.getTask().getIdentifier()!=null) {
                     List<Tag> tagsClientStream = new ArrayList(tagsClientInfo);
                     tagsClientStream.add(Tag.of("task_identifier", stream.getTask().getIdentifier()));
