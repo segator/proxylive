@@ -32,7 +32,7 @@ public class FFmpegInputStream extends VideoInputStream {
     @Override
     public boolean connect() throws IOException {
         alive=true;
-        String ffmpegCommand =  config.getFfmpeg().getPath() + " -timeout " + config.getSource().getReconnectTimeout() + " -i " +url + " -user-agent \""+config.getUserAgent()+"\" " + (channel.getFfmpegParameters()!=null?channel.getFfmpegParameters():"") + " -codec copy " + config.getFfmpeg().getMpegTS().getParameters() + " -";
+        String ffmpegCommand =  config.getFfmpeg().getPath() + " -rw_timeout " + (config.getSource().getReconnectTimeout()*1000) + " -i " +url + "  " + (channel.getFfmpegParameters()!=null?channel.getFfmpegParameters():"") + " -codec copy " + config.getFfmpeg().getMpegTS().getParameters() + " -";
         process = Runtime.getRuntime().exec(ffmpegCommand);
         ffmpegInputStream = process.getInputStream();
         threadErrorStream = streamToNull(process.getErrorStream(),process);
