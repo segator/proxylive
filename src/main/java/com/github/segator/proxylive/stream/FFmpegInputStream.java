@@ -31,9 +31,10 @@ public class FFmpegInputStream extends VideoInputStream {
     @Override
     public boolean connect() throws IOException {
         alive=true;
-        String ffmpegCommand =  config.getFfmpeg().getPath() + " -i \"" +url + "\" " + (channel.getFfmpegParameters()!=null?channel.getFfmpegParameters():"") + " -codec copy " + config.getFfmpeg().getMpegTS().getParameters() + " -";
+        String ffmpegCommand =  config.getFfmpeg().getPath() + " -i " +url + " " + (channel.getFfmpegParameters()!=null?channel.getFfmpegParameters():"") + " -codec copy " + config.getFfmpeg().getMpegTS().getParameters() + " -";
         process = Runtime.getRuntime().exec(ffmpegCommand);
         ffmpegInputStream = process.getInputStream();
+        System.out.println(ffmpegCommand);
         threadErrorStream = printErrStream(process.getErrorStream(),process);
         return true;
     }
