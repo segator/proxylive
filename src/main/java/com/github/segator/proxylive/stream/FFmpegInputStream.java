@@ -1,6 +1,5 @@
 package com.github.segator.proxylive.stream;
 
-import com.github.segator.proxylive.config.FFMpegConfiguration;
 import com.github.segator.proxylive.config.ProxyLiveConfiguration;
 import com.github.segator.proxylive.entity.Channel;
 
@@ -35,7 +34,7 @@ public class FFmpegInputStream extends VideoInputStream {
         String ffmpegCommand =  config.getFfmpeg().getPath() + " -i \"" +url + "\" " + (channel.getFfmpegParameters()!=null?channel.getFfmpegParameters():"") + " -codec copy " + config.getFfmpeg().getMpegTS().getParameters() + " -";
         process = Runtime.getRuntime().exec(ffmpegCommand);
         ffmpegInputStream = process.getInputStream();
-        threadErrorStream = streamToNull(process.getErrorStream(),process);
+        threadErrorStream = printErrStream(process.getErrorStream(),process);
         return true;
     }
 
@@ -66,14 +65,17 @@ public class FFmpegInputStream extends VideoInputStream {
         }
     }
 
-    private Thread  streamToNull(InputStream is,Process proc) {
+    private Thread printErrStream(InputStream is, Process proc) {
         Thread t =  new Thread(new Runnable() {
             @Override
             public void run() {
                 byte[] buffer = new byte[1024];
                 try {
                     while(proc.isAlive()){
-                        is.read(buffer);
+                        int r = is.read(buffer);
+                        if(r > 0 ) {
+                            System.out.print(new String(buffer, 0, r));
+                        }
                         Thread.sleep(10);
                     }
                 } catch (Exception e) {
