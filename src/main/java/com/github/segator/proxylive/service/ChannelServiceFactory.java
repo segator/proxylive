@@ -20,6 +20,8 @@ public class ChannelServiceFactory {
                 return new ChannelTVHeadendService();
             case "json":
                 return new ChannelURLService();
+            case "m3u8":
+                return new ChannelM3u8Service();
         }
         return null;
     }
