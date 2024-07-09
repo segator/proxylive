@@ -7,7 +7,7 @@ RUN mvn clean install && \
     wget https://get.docker.com/builds/Linux/x86_64/docker-1.12.0.tgz && \
     tar zxvf docker-1.12.0.tgz
 
-FROM jrottenberg/ffmpeg:4.3-vaapi
+FROM jrottenberg/ffmpeg:7.0-vaapi
 MAINTAINER Isaac Aymerich <isaac.aymerich@gmail.com>
 
 RUN apt-get update -y && \
