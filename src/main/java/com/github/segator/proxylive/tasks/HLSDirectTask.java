@@ -30,12 +30,12 @@ import com.github.segator.proxylive.processor.IStreamProcessor;
 import com.github.segator.proxylive.profiler.FFmpegProfilerService;
 import com.github.segator.proxylive.service.TokenService;
 import com.github.segator.proxylive.stream.WithoutBlockingInputStream;
+import jakarta.annotation.PostConstruct;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 
-import javax.annotation.PostConstruct;
 import java.io.*;
 import java.net.URISyntaxException;
 import java.nio.file.Files;

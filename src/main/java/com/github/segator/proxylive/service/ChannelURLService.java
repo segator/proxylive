@@ -7,6 +7,8 @@ import com.github.segator.proxylive.config.GitSource;
 import com.github.segator.proxylive.config.ProxyLiveConfiguration;
 import com.github.segator.proxylive.entity.Channel;
 import com.github.segator.proxylive.entity.ChannelSource;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.eclipse.jgit.api.*;
@@ -23,8 +25,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URISyntaxException;

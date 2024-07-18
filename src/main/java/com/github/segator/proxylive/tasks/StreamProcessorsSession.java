@@ -33,7 +33,7 @@ import com.github.segator.proxylive.processor.IStreamProcessor;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.*;
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 import com.github.segator.proxylive.service.GeoIPService;
 import com.maxmind.geoip2.DatabaseReader;

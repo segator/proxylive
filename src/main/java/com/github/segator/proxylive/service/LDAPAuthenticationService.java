@@ -8,13 +8,14 @@ package com.github.segator.proxylive.service;
 import com.github.segator.proxylive.config.LDAPAutentication;
 import com.github.segator.proxylive.config.ProxyLiveConfiguration;
 import com.github.segator.proxylive.helper.AuthorityRoles;
+import jakarta.annotation.PostConstruct;
 import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
-import javax.annotation.PostConstruct;
+
 import javax.naming.Context;
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;

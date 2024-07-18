@@ -8,6 +8,7 @@ package com.github.segator.proxylive.service;
 import com.github.segator.proxylive.config.PlexAuthentication;
 import com.github.segator.proxylive.config.ProxyLiveConfiguration;
 import com.github.segator.proxylive.helper.AuthorityRoles;
+import jakarta.annotation.PostConstruct;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
@@ -22,7 +23,6 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
-import javax.annotation.PostConstruct;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;

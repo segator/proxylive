@@ -3,6 +3,8 @@ package com.github.segator.proxylive.service;
 import com.github.segator.proxylive.config.ProxyLiveConfiguration;
 import com.github.segator.proxylive.entity.Channel;
 import com.github.segator.proxylive.entity.ChannelSource;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.json.simple.JSONArray;
@@ -14,8 +16,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -81,7 +81,7 @@ public class ChannelTVHeadendService implements ChannelService {
             //Channel number
             String channelNumber="";
             if(channelObject.get("number")!=null){
-                channel.setNumber(new Integer(channelObject.get("number").toString()));
+                channel.setNumber(Integer.valueOf(channelObject.get("number").toString()));
             }
 
 

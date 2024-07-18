@@ -31,7 +31,13 @@ public class FFmpegInputStream extends VideoInputStream {
     @Override
     public boolean connect() throws IOException {
         alive=true;
-        String ffmpegCommand =  config.getFfmpeg().getPath() + " -i " +url + " " + (channel.getFfmpegParameters()!=null?channel.getFfmpegParameters():"") + " -codec copy " + config.getFfmpeg().getMpegTS().getParameters() + " -";
+        String encryptionParams = "";
+        String defaultVCodec = "copy";
+        if(channel.getEncryptionKey()!=null){
+            encryptionParams = "-cenc_decryption_key " + channel.getEncryptionKey() + " -re -analyzeduration 1000000 -probesize 512K";
+            defaultVCodec = "copy";
+        }
+        String ffmpegCommand =  config.getFfmpeg().getPath() + " " + encryptionParams + " -i " +url + " " + (channel.getFfmpegParameters()!=null?channel.getFfmpegParameters():"") + " -codec " +defaultVCodec + " " + config.getFfmpeg().getMpegTS().getParameters() + " -";
         process = Runtime.getRuntime().exec(ffmpegCommand);
         ffmpegInputStream = process.getInputStream();
         System.out.println(ffmpegCommand);

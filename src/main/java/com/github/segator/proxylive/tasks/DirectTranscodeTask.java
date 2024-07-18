@@ -12,12 +12,12 @@ import com.github.segator.proxylive.profiler.FFmpegProfilerService;
 import com.github.segator.proxylive.service.TokenService;
 import com.github.segator.proxylive.stream.BroadcastCircularBufferedOutputStream;
 import com.github.segator.proxylive.stream.WithoutBlockingInputStream;
+import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 
-import javax.annotation.PostConstruct;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;

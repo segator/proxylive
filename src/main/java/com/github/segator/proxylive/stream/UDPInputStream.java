@@ -28,7 +28,7 @@ public class UDPInputStream extends VideoInputStream {
         this.config = config;
         url = url.split(Pattern.quote("udp://"))[1];
         server = InetAddress.getByName(url.split(Pattern.quote(":"))[0]);
-        port = new Integer(url.split(Pattern.quote(":"))[1]);
+        port = Integer.parseInt(url.split(Pattern.quote(":"))[1]);
         buffer  = new byte[131072];
     }
 

@@ -29,6 +29,7 @@ package com.github.segator.proxylive.config;
  */
 public class HttpLiveSource {
     private String tvheadendURL;
+    private String m3u8URL;
     private EPGConfiguration epg;
     private int reconnectTimeout;
     private int channelListCacheTime=600;
@@ -72,5 +73,13 @@ public class HttpLiveSource {
 
     public void setChannelListCacheTime(int channelListCacheTime) {
         this.channelListCacheTime = channelListCacheTime;
+    }
+
+    public String getM3u8URL() {
+        return m3u8URL;
+    }
+
+    public void setM3u8URL(String m3u8URL) {
+        this.m3u8URL = m3u8URL;
     }
 }

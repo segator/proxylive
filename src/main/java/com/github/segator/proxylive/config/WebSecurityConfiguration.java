@@ -1,45 +1,40 @@
 package com.github.segator.proxylive.config;
 
 import com.github.segator.proxylive.helper.AuthorityRoles;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.builders.WebSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.stereotype.Component;
 
-@Component
-public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
+@Configuration
+public class WebSecurityConfiguration {
 
     private final JWTBasicFilter jwtBasicFilter;
-    private final JwtConfiguration jwtConfiguration;
 
-    public WebSecurityConfiguration(JWTBasicFilter jwtBasicFilter, JwtConfiguration jwtConfiguration) {
+    public WebSecurityConfiguration(JWTBasicFilter jwtBasicFilter) {
         this.jwtBasicFilter = jwtBasicFilter;
-        this.jwtConfiguration = jwtConfiguration;
     }
-    @Override
-    public void configure(WebSecurity web) throws Exception {
-        web.ignoring().antMatchers("/login","/error","/actuator/**");
-    }
-    @Override
-    protected void configure(HttpSecurity http) throws Exception {
 
-        http
-                .cors()
-                .and()
-                .csrf().disable()
-                .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                .and()
-                .authorizeRequests(configurer ->
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        return http
+                .cors(AbstractHttpConfigurer::disable)
+                .csrf(AbstractHttpConfigurer::disable)
+                .sessionManagement(httpSecuritySessionManagementConfigurer -> httpSecuritySessionManagementConfigurer.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(configurer ->
                         configurer
-                                .antMatchers("/channel/**","/view/raw","/api/**")
-                                .hasRole(AuthorityRoles.USER.getAuthority())
-                                .antMatchers("/view/**")
-                                .hasRole(AuthorityRoles.ALLOW_ENCODING.getAuthority())
-                                .antMatchers("/ws/**")
-                                .hasRole(AuthorityRoles.ADMIN.getAuthority())
-                ).addFilterAfter(jwtBasicFilter, UsernamePasswordAuthenticationFilter.class);
+                                .requestMatchers("/login", "/error", "/actuator/**").permitAll()
+                                .requestMatchers("/channel/**","/view/raw","/api/**").hasRole(AuthorityRoles.USER.getAuthority())
+                                .requestMatchers("/view/**").hasRole(AuthorityRoles.ALLOW_ENCODING.getAuthority())
+                                .requestMatchers("/ws/**").hasRole(AuthorityRoles.ADMIN.getAuthority())
+                                .anyRequest().authenticated()
+                )
+                .addFilterAfter(jwtBasicFilter, UsernamePasswordAuthenticationFilter.class)
+                .build();
     }
 
 }

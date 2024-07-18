@@ -25,6 +25,9 @@ package com.github.segator.proxylive.config;
 
 import com.github.segator.proxylive.helper.JwtHelper;
 import com.github.segator.proxylive.tasks.DirectTranscodeTask;
+import jakarta.annotation.PostConstruct;
+import lombok.Getter;
+import lombok.Setter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -32,7 +35,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import org.springframework.context.annotation.Configuration;
 
-import javax.annotation.PostConstruct;
+
 
 /**
  *
@@ -43,12 +46,26 @@ import javax.annotation.PostConstruct;
 public class ProxyLiveConfiguration {
     private final Logger logger = LoggerFactory.getLogger(DirectTranscodeTask.class);
     private final JwtHelper jwtHelper;
+    @Setter
+    @Getter
     private BufferingConfiguration buffers;
+    @Getter
+    @Setter
     private FFMpegConfiguration ffmpeg;
+    @Getter
+    @Setter
     private HttpLiveSource source;
+    @Getter
+    @Setter
     private GEOIPDatasource geoIP;
+    @Setter
+    @Getter
     private AuthenticationConfiguration authentication;
+    @Getter
+    @Setter
     private String userAgent;
+    @Setter
+    @Getter
     private int streamTimeout;
 
     public ProxyLiveConfiguration(JwtHelper jwtHelper) {
@@ -57,7 +74,6 @@ public class ProxyLiveConfiguration {
 
     @PostConstruct
     public void initializeBean() {
-
         //If tvheadend input is set complete configuration
         if(source.getTvheadendURL()!=null){
             if( source.getEpg().getUrl()==null) {
@@ -67,67 +83,8 @@ public class ProxyLiveConfiguration {
                 source.getChannels().setUrl(source.getTvheadendURL());
             }
         }
-
-
-    }
-
-    public FFMpegConfiguration getFfmpeg() {
-        return ffmpeg;
-    }
-
-    public void setFfmpeg(FFMpegConfiguration ffmpeg) {
-        this.ffmpeg = ffmpeg;
-    }
-
-    public HttpLiveSource getSource() {
-        return source;
-    }
-
-    public GEOIPDatasource getGeoIP() {
-        return geoIP;
-    }
-
-    public void setGeoIP(GEOIPDatasource geoIP) {
-        this.geoIP = geoIP;
-    }
-
-    public void setSource(HttpLiveSource source) {
-        this.source = source;
-    }
-
-    public BufferingConfiguration getBuffers() {
-        return buffers;
-    }
-
-    public void setBuffers(BufferingConfiguration buffers) {
-        this.buffers = buffers;
-    }
-
-    public AuthenticationConfiguration getAuthentication() {
-        return authentication;
-    }
-
-    public void setAuthentication(AuthenticationConfiguration authentication) {
-        this.authentication = authentication;
-    }
-
-    public int getStreamTimeout() {
-        return streamTimeout;
     }
     public int getStreamTimeoutMilis() {
         return streamTimeout*1000;
-    }
-
-    public void setStreamTimeout(int streamTimeout) {
-        this.streamTimeout = streamTimeout;
-    }
-
-
-    public String getUserAgent() {
-        return userAgent;
-    }
-
-    public void setUserAgent(String userAgent) {
-        this.userAgent = userAgent;
     }
 }

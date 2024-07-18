@@ -23,22 +23,17 @@
  */
 package com.github.segator.proxylive.tasks;
 
-import com.github.segator.proxylive.ProxyLiveUtils;
-import com.github.segator.proxylive.config.FFMpegProfile;
 import com.github.segator.proxylive.config.ProxyLiveConfiguration;
 import com.github.segator.proxylive.config.RemoteTranscoder;
-import com.github.segator.proxylive.entity.ChannelSource;
 import com.github.segator.proxylive.processor.IStreamProcessor;
 import com.github.segator.proxylive.service.TokenService;
 import com.github.segator.proxylive.stream.*;
+import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
 
-import javax.annotation.PostConstruct;
 import java.io.IOException;
-import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Date;

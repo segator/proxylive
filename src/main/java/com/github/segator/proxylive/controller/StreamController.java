@@ -53,8 +53,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.net.URISyntaxException;
 import java.util.*;
@@ -233,7 +233,10 @@ public class StreamController {
                 epgIDString = String.format("tvg-id=\"%s\"",channel.getEpgID());
             }
             String logoURL="";
-            if(channel.getLogoURL()!=null || channel.getLogoFile()!=null){
+            if(channel.getLogoURL()!=null){
+                logoURL = channel.getLogoURL();
+            }else
+            if(channel.getLogoFile()!=null){
                 logoURL = String.format("tvg-logo=\"%s/channel/%s/icon\"",requestBaseURL,channel.getId());
             }
 
