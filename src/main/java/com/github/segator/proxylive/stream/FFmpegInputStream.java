@@ -34,8 +34,7 @@ public class FFmpegInputStream extends VideoInputStream {
         String encryptionParams = "";
         String defaultVCodec = "copy";
         if(channel.getEncryptionKey()!=null){
-            encryptionParams = "-cenc_decryption_key " + channel.getEncryptionKey() + " -re -analyzeduration 1000000 -probesize 512K";
-            defaultVCodec = "copy";
+            encryptionParams = "-re -timeout 5 -cenc_decryption_key " + channel.getEncryptionKey() + "  "; //  -fflags +genpts -async 1  -rtbufsize 2000M -probesize 1000000 -analyzeduration 1000000
         }
         String ffmpegCommand =  config.getFfmpeg().getPath() + " " + encryptionParams + " -i " +url + " " + (channel.getFfmpegParameters()!=null?channel.getFfmpegParameters():"") + " -codec " +defaultVCodec + " " + config.getFfmpeg().getMpegTS().getParameters() + " -";
         process = Runtime.getRuntime().exec(ffmpegCommand);
