@@ -93,7 +93,6 @@ public class JWTBasicFilter  extends OncePerRequestFilter {
                     } else {
                         SecurityContextHolder.clearContext();
                     }
-                    filterChain.doFilter(request,response);
                 } else {
                     //Old Authentication system compatibility, redirecting user and pass to token on the fly with 301 redirect.
                     String username = request.getParameter(PARAM_OLD_USERNAME);
@@ -119,6 +118,8 @@ public class JWTBasicFilter  extends OncePerRequestFilter {
                     }
                     SecurityContextHolder.clearContext();
                 }
+
+                filterChain.doFilter(request,response);
             }
         } catch (ExpiredJwtException | UnsupportedJwtException | MalformedJwtException e) {
             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
