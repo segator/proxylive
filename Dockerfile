@@ -7,7 +7,7 @@ RUN mvn clean install && \
     wget https://download.docker.com/linux/static/stable/x86_64/docker-27.0.3.tgz && \
     tar zxvf docker-27.0.3.tgz
 
-FROM jrottenberg/ffmpeg:7.0-vaapi
+FROM linuxserver/ffmpeg:7.0.1
 MAINTAINER Isaac Aymerich <isaac.aymerich@gmail.com>
 
 RUN apt-get update -y && \
