@@ -87,9 +87,9 @@ public class ChannelM3u8Service implements ChannelService {
                     currentChannel.setLogoURL(matcher.group(3));
                     currentChannel.setCategories(Collections.singletonList(matcher.group(4)));
                 }
-            } else if (line.startsWith("#KODIPROP")){
+            } else if (line.startsWith("#KODIPROP")) {
                 Matcher kodiLicenseMatcher = kodiLicenseKeyPattern.matcher(line);
-                if(kodiLicenseMatcher.find()){
+                if (kodiLicenseMatcher.find()) {
                     String jsonString = line.substring(line.indexOf('=') + 1).trim();
                     JsonNode jsonNode = objectMapper.readTree(jsonString);
                     JsonNode keysNode = jsonNode.path("keys");
@@ -100,10 +100,13 @@ public class ChannelM3u8Service implements ChannelService {
                 }
 
                 Matcher kodiStreamHeadersMatcher = kodiStreamHeadersPattern.matcher(line);
-                if(kodiStreamHeadersMatcher.find()){
+                if (kodiStreamHeadersMatcher.find()) {
                     String headers = line.substring(line.indexOf('=') + 1).trim();
-                    currentChannel.setSourceHeaders(getQueryMap(headers));
+                    currentChannel.getSourceHeaders().putAll(getQueryMap(headers));
                 }
+            }else if (line.startsWith("#EXTVLCOPT")){
+                String headers = line.substring(11).trim();
+                currentChannel.getSourceHeaders().putAll(getQueryMap(headers));
             } else if (line.startsWith("http")) {
                 if (currentChannel != null) {
                     currentChannel.setSources(Collections.singletonList(new ChannelSource(1, line, "ffmpeg")));
