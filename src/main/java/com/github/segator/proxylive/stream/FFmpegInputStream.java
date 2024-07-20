@@ -43,7 +43,7 @@ public class FFmpegInputStream extends VideoInputStream {
         }
         StringBuilder inputHeaders = new StringBuilder();
         for (Map.Entry<String, String> entry :channel.getSourceHeaders().entrySet()) {
-            inputHeaders.append(String.format(" -headers \"%s: %s\"", entry.getKey(), entry.getValue()));
+            inputHeaders.append(String.format(" -headers %s:%s", entry.getKey(), entry.getValue()));
         }
         String ffmpegCommand =  config.getFfmpeg().getPath() + " " + encryptionParams + inputHeaders + " -i " +url + " " + (channel.getFfmpegParameters()!=null?channel.getFfmpegParameters():"") + " -codec " +defaultVCodec + " " + config.getFfmpeg().getMpegTS().getParameters() + " -";
         var cli = CommandLine.parse(ffmpegCommand);
@@ -51,6 +51,7 @@ public class FFmpegInputStream extends VideoInputStream {
         commandList.add(config.getFfmpeg().getPath());
         commandList.addAll(Arrays.asList(cli.getArguments()));
         process = new ProcessBuilder( commandList).start();
+        System.out.println(ffmpegCommand);
         ffmpegInputStream = process.getInputStream();
         threadErrorStream = printErrStream(process.getErrorStream(),process);
         return true;
