@@ -4,7 +4,9 @@ import lombok.Data;
 
 import java.io.File;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Data
 public class Channel {
@@ -17,6 +19,7 @@ public class Channel {
     private String encryptionKey;
     private List<String> categories;
     private List<ChannelSource> sources;
+    private Map<String,String> sourceHeaders=new HashMap<>();
     private String ffmpegParameters="";
     public Channel(){
 

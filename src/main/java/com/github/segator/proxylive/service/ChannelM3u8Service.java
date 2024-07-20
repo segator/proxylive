@@ -37,7 +37,8 @@ public class ChannelM3u8Service implements ChannelService {
     private ObjectMapper objectMapper = new ObjectMapper();
     private Pattern urlTvgPattern = Pattern.compile("url-tvg=\"([^\"]+)\"");
     private Pattern channelPattern = Pattern.compile("tvg-id=\"(.*?)\".*tvg-name=\"(.*?)\".*tvg-logo=\"(.*?)\".*group-title=\"(.*?)\"");
-    private Pattern encryptedPattern = Pattern.compile("^#KODIPROP:inputstream\\.adaptive\\.license_key=\\{.*\\}$");
+    private Pattern kodiLicenseKeyPattern = Pattern.compile("^#KODIPROP:inputstream\\.adaptive\\.license_key=\\{.*\\}$");
+    private Pattern kodiStreamHeadersPattern = Pattern.compile("^#KODIPROP:inputstream\\.adaptive\\.stream_headers=.*$");
 
     @Override
     public List<Channel> getChannelList() {
@@ -87,8 +88,8 @@ public class ChannelM3u8Service implements ChannelService {
                     currentChannel.setCategories(Collections.singletonList(matcher.group(4)));
                 }
             } else if (line.startsWith("#KODIPROP")){
-                Matcher matcher = encryptedPattern.matcher(line);
-                if(matcher.find()){
+                Matcher kodiLicenseMatcher = kodiLicenseKeyPattern.matcher(line);
+                if(kodiLicenseMatcher.find()){
                     String jsonString = line.substring(line.indexOf('=') + 1).trim();
                     JsonNode jsonNode = objectMapper.readTree(jsonString);
                     JsonNode keysNode = jsonNode.path("keys");
@@ -96,6 +97,12 @@ public class ChannelM3u8Service implements ChannelService {
                         JsonNode firstKey = keysNode.get(0);
                         currentChannel.setEncryptionKey(toHex(firstKey.get("k").asText()));
                     }
+                }
+
+                Matcher kodiStreamHeadersMatcher = kodiStreamHeadersPattern.matcher(line);
+                if(kodiStreamHeadersMatcher.find()){
+                    String headers = line.substring(line.indexOf('=') + 1).trim();
+                    currentChannel.setSourceHeaders(getQueryMap(headers));
                 }
             } else if (line.startsWith("http")) {
                 if (currentChannel != null) {
@@ -165,5 +172,21 @@ public class ChannelM3u8Service implements ChannelService {
             hexString.append(hex);
         }
         return hexString.toString();
+    }
+    public static Map<String, String> getQueryMap(String query) {
+        Map<String, String> map = new HashMap<>();
+
+        String[] pairs = query.split("&");
+        for (String pair : pairs) {
+            String[] keyValue = pair.split("=");
+            if (keyValue.length == 2) {
+                map.put(keyValue[0], keyValue[1]);
+            } else if (keyValue.length == 1) {
+                // Handle cases where the value might be missing
+                map.put(keyValue[0], "");
+            }
+        }
+
+        return map;
     }
 }
