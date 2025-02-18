@@ -42,10 +42,15 @@ public class FFmpegInputStream extends VideoInputStream {
             encryptionParams = " -re -timeout 5 -cenc_decryption_key " + channel.getEncryptionKey() + "  "; //  -fflags +genpts -async 1  -rtbufsize 2000M -probesize 1000000 -analyzeduration 1000000
         }
         StringBuilder inputHeaders = new StringBuilder();
+        String userAgent = "";
         for (Map.Entry<String, String> entry :channel.getSourceHeaders().entrySet()) {
-            inputHeaders.append(String.format(" -headers %s:%s", entry.getKey(), entry.getValue()));
+            if(entry.getKey().contains("user-agent")){
+                userAgent = "-user_agent \"" + entry.getValue() + "\"";
+                continue;
+            }
+            inputHeaders.append(String.format(" -headers %s:%s", entry.getKey().replace("http-",""), entry.getValue()));
         }
-        String ffmpegCommand =  config.getFfmpeg().getPath() + " " + encryptionParams + inputHeaders + " -i " +url + " " + (channel.getFfmpegParameters()!=null?channel.getFfmpegParameters():"") + " -codec " +defaultVCodec + " " + config.getFfmpeg().getMpegTS().getParameters() + " -";
+        String ffmpegCommand =  config.getFfmpeg().getPath() + " " + encryptionParams + userAgent + inputHeaders + " -i " +url + " " + (channel.getFfmpegParameters()!=null?channel.getFfmpegParameters():"") + " -codec " +defaultVCodec + " " + config.getFfmpeg().getMpegTS().getParameters() + " -";
         var cli = CommandLine.parse(ffmpegCommand);
         List<String> commandList = new ArrayList<>();
         commandList.add(config.getFfmpeg().getPath());
